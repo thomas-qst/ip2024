@@ -5,59 +5,68 @@
     <title>Fotoalbum</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
-<body>
-<header class="p-3 mb-3 border-bottom data-bs-theme=”dark">
-    <div class="container">
-        <div class="d-flex flex-wrap align-items-center justify-content-end justify-content-lg-end">
-            <form class="col-13 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
-                <input type="search" class="form-control" placeholder="Search..." aria-label="Search">
-            </form>
-            <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <!-- HIER NUTZERNAME -->
+<body class="overflow-hidden">
+<header class="border-bottom data-bs-theme=”dark" style="height: 8vh;">
+    <div class="container h-100">
+        <div class="d-inline-block align-middle position-relative" style="top: 20%">
+            <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decorattion-none">
+                <svg class="bi pe-none me-2" width="40" height="32">
+                    <!-- HIER UNSER LOGO -->
+                    <use xlink:href="#bootstrap"></use>
+                </svg>
             </a>
-            <div class="dropdown" data-bs-theme="dark">
-                <ul class="dropdown-menu text-small show" aria-labelledby="dropdownMenuButtonDark" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-41.5px, 34px, 0px);" data-popper-placement="bottom-start">
-                    <li>
-                        <a class="dropdown-item" href="#">Benutzermanagment</a>
-                    </li>
-                </ul>
+        </div>
+        <div class="d-inline-block align-middle position-relative align-" style="top: 20%">
+            <div class="d-flex flex-wrap align-items-center justify-content-end justify-content-lg-end">
+                <form class="col-13 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" style="width: 60vw; padding-left: 15vw;">
+                    <input type="search" class="form-control" placeholder="Search..." aria-label="Search">
+                </form>
+                <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <!-- HIER NUTZERNAME -->
+                </a>
+                <div class="dropdown" data-bs-theme="dark">
+                    <ul class="dropdown-menu text-small" aria-labelledby="dropdownMenuButtonDark" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-41.5px, 34px, 0px);" data-popper-placement="bottom-start">
+                        <li>
+                            <a class="dropdown-item" href="#">Benutzermanagment</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
+
     </div>
 </header>
+<div class="d-flex flex-row" style="height: 100vh">
+    <div class="d-flex flex-column flex-shrink-0 ps-3 text-bg-dark border-end" style="width: 15vw;">
+        <ul class="nav nav-pills flex-column mb-auto mt-3">
+            <li class="nav-item">
+                <a href="#" class="nav-link active" aria-current="page">
+                    <svg class="bi pe-none me-2" width="16" height="16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-images" viewBox="0 0 16 16">
+                            <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
+                            <path d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1z"/>
+                        </svg>
+                    </svg>
+                    Fotos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link text-white" aria-current="page">
+                    <svg class="bi pe-none me-2" width="16" height="16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder2" viewBox="0 0 16 16">
+                            <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5zM2.5 3a.5.5 0 0 0-.5.5V6h12v-.5a.5.5 0 0 0-.5-.5H9c-.964 0-1.71-.629-2.174-1.154C6.374 3.334 5.82 3 5.264 3zM14 7H2v5.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5z"/>
+                        </svg>
+                    </svg>
+                    Alben
+                </a>
+            </li>
+        </ul>
+    </div>
+    <main>
 
-<main class="d-flex flex-column flex-shrink-0 p-3 text-bg-dark" style="width: 280px;">
-    <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decorattion-none">
-        <svg class="bi pe-none me-2" width="40" height="32">
-            <!-- HIER UNSER LOGO -->
-            <use xlink:href="#bootstrap"></use>
-        </svg>
-    </a>
-    <hr>
-    <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item">
-            <a href="#" class="nav-link active" aria-current="page">
-                <svg class="bi pe-none me-2" width="16" height="16">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-images" viewBox="0 0 16 16">
-                        <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
-                        <path d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1z"/>
-                    </svg>
-                </svg>
-                Fotos
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link text-white" aria-current="page">
-                <svg class="bi pe-none me-2" width="16" height="16">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder2" viewBox="0 0 16 16">
-                        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5zM2.5 3a.5.5 0 0 0-.5.5V6h12v-.5a.5.5 0 0 0-.5-.5H9c-.964 0-1.71-.629-2.174-1.154C6.374 3.334 5.82 3 5.264 3zM14 7H2v5.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5z"/>
-                    </svg>
-                </svg>
-                Alben
-            </a>
-        </li>
-    </ul>
-</main>
+    </main>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
