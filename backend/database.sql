@@ -44,4 +44,10 @@ CREATE TABLE AlbumFoto(
     photo_id int,
     FOREIGN KEY (album_id) REFERENCES Album(album_id),
     FOREIGN KEY (photo_id) REFERENCES Photo(photo_id)
-)
+);
+
+use FotoApplication;
+create user 'FotoApplication'@'localhost' IDENTIFIED by '1234';
+grant all privileges on FotoApplication to 'FotoApplication'@'localhost';
+grant all privileges on FotoApplication.* to 'FotoApplication'@'localhost';
+flush privileges;

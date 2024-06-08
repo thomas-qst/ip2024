@@ -1,0 +1,14 @@
+### get Users
+GET http://localhost:8888/users
+
+###
+
+### add Users
+POST http://localhost:8888/users
+Content-Type: application/json
+
+{
+  "username": "Admin",
+  "password_hash": "a4s5d4f56asd4f"
+}
+###
