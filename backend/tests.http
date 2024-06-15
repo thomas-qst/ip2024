@@ -12,3 +12,6 @@ Content-Type: application/json
   "password_hash": "a4s5d4f56asd4f"
 }
 ###
+
+
+GET http://localhost:8888/pictures/Admin

@@ -17,7 +17,9 @@ CREATE TABLE Photo (
     photo_id INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     title VARCHAR(32) NOT NULL,
     photo LONGBLOB NOT NULL,
-    date date NOT NULL
+    date date NOT NULL,
+    user VARCHAR(32) NOT NULL,
+    FOREIGN KEY (user) references User(username)
 );
 
 CREATE TABLE PhotoTags(

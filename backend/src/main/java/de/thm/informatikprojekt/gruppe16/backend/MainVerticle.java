@@ -8,7 +8,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
 
-
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -31,6 +30,9 @@ import java.sql.*;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
+
+import java.time.LocalDate;
+
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -95,7 +97,49 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void getPicturesByUsername(RoutingContext ctx){
-    //TODO add function
+    //TODO add auth
+    String username = String.valueOf(ctx.pathParam("username"));
+
+    if(username != null){
+      username = username.replaceAll("\\s+","");
+    }
+
+    if(username == null || username.isEmpty()){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Failed get Pictures. Missing Arguments")));
+      return;
+    }
+
+    final String finalUsername = username;
+
+    JsonArray ja = new JsonArray();
+    pool
+      .preparedQuery("SELECT * from photo where user = (?)")
+      .execute(Tuple.of(finalUsername))
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(rows -> {
+        for(Row row: rows){
+          JsonObject photoJson = new JsonObject();
+          photoJson
+            .put("photo_id", row.getInteger("photo_id"))
+            .put("title", row.getString("title"))
+            .put("photo", row.getBuffer("photo"))
+            .put("date", row.getLocalDate("date"));
+          ja.add(photoJson);
+        }
+        ctx.response()
+          .setStatusCode(200)
+          .putHeader("content-type","application/json")
+          .end(Json.encodePrettily(new JsonObject().put("sucess","Pictures found").put("data", ja)));
+      });
   }
 
   public void getAlbumsByUsername(RoutingContext ctx){
@@ -103,6 +147,7 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void getUsers(RoutingContext ctx){
+    //TODO add auth
     JsonArray ja = new JsonArray();
     pool
       .query("SELECT username,is_Admin from user")
@@ -142,6 +187,7 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addUser(RoutingContext ctx){
+    //TODO add auth
     JsonObject jObj = ctx.getBodyAsJson();
     if(jObj == null){
       ctx.response()
@@ -208,7 +254,51 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addPicture(RoutingContext ctx){
-    //TODO add function
+    //TODO add auth
+    JsonObject jObj = ctx.getBodyAsJson();
+    if(jObj == null){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+      return;
+    }
+
+    final String title = (String) jObj.getString("title");
+    final byte[] photo = jObj.getBinary("photo");
+    final LocalDate date = LocalDate.now();
+    String username = (String) jObj.getString("username");
+
+    if(username != null){
+      username = username.replaceAll("\\s+","");
+    }
+
+    if(username == null || username.isEmpty() || title == null || title.isEmpty() || photo == null || photo.length == 0){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Failed to add User. Missing Arguments")));
+      return;
+    }
+
+    final String finalUsername = username;
+
+    pool
+      .preparedQuery("INSERT INTO photo (title, photo, date, user) VALUES (?, ?, ?, ?)")
+      .execute(Tuple.of(title, photo, date, finalUsername))
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(insertRows -> {
+        ctx.response()
+          .setStatusCode(200)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("success", "Photo added to Database")));
+      });
   }
 
   public void addAlbum(RoutingContext ctx){
