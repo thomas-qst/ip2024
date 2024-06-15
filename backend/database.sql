@@ -4,8 +4,8 @@ use FotoApplication;
 CREATE TABLE User (
     username VARCHAR(32) PRIMARY KEY NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    one_time_password boolean,
-    is_Admin boolean
+    one_time_password boolean NOT NULL,
+    is_Admin boolean NOT NULL
 );
 
 CREATE TABLE Album(

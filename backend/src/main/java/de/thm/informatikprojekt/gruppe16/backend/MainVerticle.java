@@ -63,15 +63,16 @@ public class MainVerticle extends AbstractVerticle {
     router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
     router.route().handler(BodyHandler.create());
 
-    router.get("/login/:username").handler(this::login);
     router.get("/pictures/:username").handler(this::getPicturesByUsername);
     router.get("/albums/:username").handler(this::getAlbumsByUsername);
     router.get("/users").handler(this::getUsers);
+    router.get("/users/:username").handler(this::getUserbyUsername);
 
     router.delete("/users/delete/:username").handler(this::deleteUser);
     router.delete("/pictures/delete/:picture_id").handler(this::deletePicture);
     router.delete("/albums/delete/:album_id").handler(this::deleteAlbum);
 
+    router.post("/login").handler(this::login);
     router.post("/users").handler(this::addUser);
     router.post("/pictures").handler(this::addPicture);
     router.post("/album").handler(this::addAlbum);
@@ -93,7 +94,66 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void login(RoutingContext ctx){
-    //TODO add function
+    JsonObject jObj = ctx.getBodyAsJson();
+    if(jObj == null){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+      return;
+    }
+    String username = (String) jObj.getString("username");
+    String password_hash = (String) jObj.getString("password_hash");
+
+    if(username != null && password_hash != null){
+      username = username.replaceAll("\\s+","");
+      password_hash = password_hash.replaceAll("\\s+","");
+    }
+
+    if(username == null || password_hash == null || username.isEmpty() || password_hash.isEmpty()){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Failed to add User. Missing Arguments")));
+      return;
+    }
+
+    final String finalUsername = username;
+    final String finalPassword_hash = password_hash;
+
+    pool
+      .preparedQuery("SELECT one_time_password from user where username = (?) and password_hash = (?)")
+      .execute(Tuple.of(finalUsername,finalPassword_hash))
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(rows -> {
+        if(rows.size() == 1){
+          if(rows.iterator().next().getBoolean("one_time_password")){
+            ctx.session().put("user", finalUsername);
+            ctx.session().put("OTP", true);
+            ctx.response()
+              .setStatusCode(200)
+              .putHeader("content-type", "application/json")
+              .end(Json.encodePrettily(new JsonObject().put("sucess", "User added to session, OTP detected!")));
+          }else{
+            ctx.session().put("user", finalUsername);
+            ctx.response()
+              .setStatusCode(201)
+              .putHeader("content-type", "application/json")
+              .end(Json.encodePrettily(new JsonObject().put("sucess", "User added to session")));
+          }
+        }else{
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(404)
+            .end(Json.encodePrettily(new JsonObject().put("error", "Wrong username or password")));
+        }
+      });
   }
 
   public void getPicturesByUsername(RoutingContext ctx){
@@ -174,6 +234,10 @@ public class MainVerticle extends AbstractVerticle {
       });
   }
 
+  public void getUserbyUsername(RoutingContext ctx){
+    //TODO add function
+  }
+
   public void deleteUser(RoutingContext ctx){
     //TODO add function
   }
@@ -198,6 +262,12 @@ public class MainVerticle extends AbstractVerticle {
     }
     String username = (String) jObj.getString("username");
     String password_hash = (String) jObj.getString("password_hash");
+    boolean otp;
+    if(!jObj.containsKey("OTP")){
+      otp = true;
+    }else{
+      otp = jObj.getBoolean("OTP");
+    }
 
     if(username != null && password_hash != null){
       username = username.replaceAll("\\s+","");
@@ -234,8 +304,8 @@ public class MainVerticle extends AbstractVerticle {
             .end(Json.encodePrettily(new JsonObject().put("error", "Username already in Database")));
         } else {
           pool
-            .preparedQuery("INSERT INTO user (username, password_hash) VALUES (?, ?)")
-            .execute(Tuple.of(finalUsername, finalPassword_hash))
+            .preparedQuery("INSERT INTO user (username, password_hash, one_time_password, is_Admin) VALUES (?, ?, ?, ?)")
+            .execute(Tuple.of(finalUsername, finalPassword_hash, otp, false))
             .onFailure(e -> {
               e.printStackTrace();
               ctx.response()
@@ -245,7 +315,7 @@ public class MainVerticle extends AbstractVerticle {
             })
             .onSuccess(insertRows -> {
               ctx.response()
-                .setStatusCode(200)
+                .setStatusCode(201)
                 .putHeader("content-type", "application/json")
                 .end(Json.encodePrettily(new JsonObject().put("success", "User added to Database")));
             });
@@ -295,7 +365,7 @@ public class MainVerticle extends AbstractVerticle {
       })
       .onSuccess(insertRows -> {
         ctx.response()
-          .setStatusCode(200)
+          .setStatusCode(201)
           .putHeader("content-type", "application/json")
           .end(Json.encodePrettily(new JsonObject().put("success", "Photo added to Database")));
       });
