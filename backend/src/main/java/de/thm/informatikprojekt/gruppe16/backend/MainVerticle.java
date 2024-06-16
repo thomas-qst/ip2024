@@ -59,7 +59,7 @@ public class MainVerticle extends AbstractVerticle {
 
     initConnection();
 
-    router.route().handler(CorsHandler.create("http://localhost:63343").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods).allowCredentials(true));
+    router.route().handler(CorsHandler.create("http://localhost:(63343|8080)").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods).allowCredentials(true));
     router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
     router.route().handler(BodyHandler.create());
 
@@ -72,6 +72,7 @@ public class MainVerticle extends AbstractVerticle {
     router.delete("/users/delete/:username").handler(this::deleteUser);
     router.delete("/pictures/delete/:picture_id").handler(this::deletePicture);
     router.delete("/albums/delete/:album_id").handler(this::deleteAlbum);
+    router.delete("/login").handler(this::deleteSession);
 
     router.post("/login").handler(this::login);
     router.post("/users").handler(this::addUser);
@@ -105,7 +106,7 @@ public class MainVerticle extends AbstractVerticle {
       ctx.response()
         .putHeader("content-type", "application/json")
         .setStatusCode(200)
-        .end(Json.encodePrettily(new JsonObject().put("sucess", "User found in session").put("data", ja)));
+        .end(Json.encodePrettily(new JsonObject().put("success", "User found in session").put("data", ja)));
     }else{
       ctx.response()
         .putHeader("content-type", "application/json")
@@ -161,13 +162,13 @@ public class MainVerticle extends AbstractVerticle {
             ctx.response()
               .setStatusCode(200)
               .putHeader("content-type", "application/json")
-              .end(Json.encodePrettily(new JsonObject().put("sucess", "User added to session, OTP detected!")));
+              .end(Json.encodePrettily(new JsonObject().put("success", "User added to session, OTP detected!")));
           }else{
             ctx.session().put("user", finalUsername);
             ctx.response()
               .setStatusCode(201)
               .putHeader("content-type", "application/json")
-              .end(Json.encodePrettily(new JsonObject().put("sucess", "User added to session")));
+              .end(Json.encodePrettily(new JsonObject().put("success", "User added to session")));
           }
         }else{
           ctx.response()
@@ -176,6 +177,14 @@ public class MainVerticle extends AbstractVerticle {
             .end(Json.encodePrettily(new JsonObject().put("error", "Wrong username or password")));
         }
       });
+  }
+
+  public void deleteSession(RoutingContext ctx){
+    ctx.session().destroy();
+    ctx.response()
+      .putHeader("content-type","application/json")
+      .setStatusCode(204)
+      .end();
   }
 
   public void getPicturesByUsername(RoutingContext ctx){
@@ -220,7 +229,7 @@ public class MainVerticle extends AbstractVerticle {
         ctx.response()
           .setStatusCode(200)
           .putHeader("content-type","application/json")
-          .end(Json.encodePrettily(new JsonObject().put("sucess","Pictures found").put("data", ja)));
+          .end(Json.encodePrettily(new JsonObject().put("success","Pictures found").put("data", ja)));
       });
   }
 
@@ -252,7 +261,7 @@ public class MainVerticle extends AbstractVerticle {
         ctx.response()
           .setStatusCode(200)
           .putHeader("content-type","application/json")
-          .end(Json.encodePrettily(new JsonObject().put("sucess","Users found").put("data", ja)));
+          .end(Json.encodePrettily(new JsonObject().put("success","Users found").put("data", ja)));
       });
   }
 

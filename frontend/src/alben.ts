@@ -11,8 +11,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         await logout();
     })
 });
-
-
-
-
-
