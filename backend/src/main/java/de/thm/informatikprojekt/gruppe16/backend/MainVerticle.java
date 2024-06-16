@@ -59,7 +59,7 @@ public class MainVerticle extends AbstractVerticle {
 
     initConnection();
 
-    router.route().handler(CorsHandler.create("http://localhost:63343").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods));
+    router.route().handler(CorsHandler.create("http://localhost:63343").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods).allowCredentials(true));
     router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
     router.route().handler(BodyHandler.create());
 
@@ -67,6 +67,7 @@ public class MainVerticle extends AbstractVerticle {
     router.get("/albums/:username").handler(this::getAlbumsByUsername);
     router.get("/users").handler(this::getUsers);
     router.get("/users/:username").handler(this::getUserbyUsername);
+    router.get("/login/username").handler(this::getUsernameFromSession);
 
     router.delete("/users/delete/:username").handler(this::deleteUser);
     router.delete("/pictures/delete/:picture_id").handler(this::deletePicture);
@@ -91,6 +92,27 @@ public class MainVerticle extends AbstractVerticle {
         startPromise.fail(http.cause());
       }
     });
+  }
+
+  public void getUsernameFromSession(RoutingContext ctx){
+    final String username = ctx.session().get("user");
+    //TODO check if user is sill in database
+    if(username != null){
+      JsonArray ja = new JsonArray();
+      JsonObject jo = new JsonObject();
+      jo.put("username", username);
+      ja.add(jo);
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(200)
+        .end(Json.encodePrettily(new JsonObject().put("sucess", "User found in session").put("data", ja)));
+    }else{
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(404)
+        .end(Json.encodePrettily(new JsonObject().put("error", "No User found in session")));
+    }
+
   }
 
   public void login(RoutingContext ctx){
