@@ -33,6 +33,8 @@ import java.util.Set;
 
 import java.time.LocalDate;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -116,6 +118,17 @@ public class MainVerticle extends AbstractVerticle {
 
   }
 
+  public void passwordHash(String password) {
+    String pepper;
+    String hashed;
+
+    for (int i = 0; i < 10; i++) {
+      pepper = BCrypt.gensalt(5);
+      hashed = BCrypt.hashpw(password, pepper);
+      System.out.println("Pepper: " + pepper + ", hash: " + hashed);
+    }
+  }
+
   public void login(RoutingContext ctx){
     JsonObject jObj = ctx.getBodyAsJson();
     if(jObj == null){
@@ -127,6 +140,7 @@ public class MainVerticle extends AbstractVerticle {
     }
     String username = (String) jObj.getString("username");
     String password_hash = (String) jObj.getString("password_hash");
+    String hashedPassword = passwordHash(password_hash);
 
     if(username != null && password_hash != null){
       username = username.replaceAll("\\s+","");
