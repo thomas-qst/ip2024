@@ -35,7 +35,6 @@ import java.time.LocalDate;
 
 import org.mindrot.jbcrypt.BCrypt;
 
-
 public class MainVerticle extends AbstractVerticle {
 
   public JDBCPool pool;
@@ -140,7 +139,7 @@ public class MainVerticle extends AbstractVerticle {
     }
     String username = (String) jObj.getString("username");
     String password_hash = (String) jObj.getString("password_hash");
-    String hashedPassword = passwordHash(password_hash);
+
 
     if(username != null && password_hash != null){
       username = username.replaceAll("\\s+","");
