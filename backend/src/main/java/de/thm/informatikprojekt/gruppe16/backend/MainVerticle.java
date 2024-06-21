@@ -117,15 +117,9 @@ public class MainVerticle extends AbstractVerticle {
 
   }
 
-  public void passwordHash(String password) {
-    String pepper;
-    String hashed;
-
-    for (int i = 0; i < 10; i++) {
-      pepper = BCrypt.gensalt(5);
-      hashed = BCrypt.hashpw(password, pepper);
-      System.out.println("Pepper: " + pepper + ", hash: " + hashed);
-    }
+  public String passwordHash(String password) {
+    String hashed = BCrypt.hashpw(password, BCrypt.gensalt());
+    return hashed;
   }
 
   public void login(RoutingContext ctx){
@@ -139,6 +133,7 @@ public class MainVerticle extends AbstractVerticle {
     }
     String username = (String) jObj.getString("username");
     String password_hash = (String) jObj.getString("password_hash");
+    String password = passwordHash((String) jObj.getString("password"));
 
 
     if(username != null && password_hash != null){
