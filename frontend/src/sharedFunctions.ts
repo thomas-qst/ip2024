@@ -43,3 +43,13 @@ async function logout(){
         window.location.href = '/index.html';
     }
 }
+
+
+async function fetchImages(album? : string){
+    //TODO: add function
+    if(typeof album !== 'undefined'){
+
+    }else{
+
+    }
+}

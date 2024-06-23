@@ -57,3 +57,12 @@ function logout() {
         }
     });
 }
+function fetchImages(album) {
+    return __awaiter(this, void 0, void 0, function* () {
+        //TODO: add function
+        if (typeof album !== 'undefined') {
+        }
+        else {
+        }
+    });
+}
