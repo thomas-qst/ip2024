@@ -8,34 +8,35 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    (_a = document.getElementById("login")) === null || _a === void 0 ? void 0 : _a.addEventListener("submit", (event) => __awaiter(void 0, void 0, void 0, function* () {
-        var _c;
-        event.preventDefault();
-        const username = document.getElementById("username").value;
-        const password = document.getElementById("password").value;
+    (_a = document.getElementById("login")) === null || _a === void 0 ? void 0 : _a.addEventListener("submit", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        var _c, _d, _e, _f;
+        ev.preventDefault();
+        (_c = document.getElementById("login")) === null || _c === void 0 ? void 0 : _c.classList.add("was-validated");
+        let password = document.getElementById("password").value;
+        let password_repeat = document.getElementById("password_repeat").value;
+        if (password != password_repeat) {
+            (document.getElementById("password_repeat")).value = "";
+            (_d = document.getElementById("password_repeat")) === null || _d === void 0 ? void 0 : _d.classList.add("is-invalid");
+            return;
+        }
+        (_e = document.getElementById("password_repeat")) === null || _e === void 0 ? void 0 : _e.classList.remove("is-invalid");
+        (_f = document.getElementById("password_repeat")) === null || _f === void 0 ? void 0 : _f.classList.add("is-valid");
         const res = yield fetch("http://localhost:8888/login", {
-            method: 'post',
+            method: 'PATCH',
             mode: 'cors',
             headers: {
                 "Content-Type": "application/json"
             },
             credentials: "include",
-            body: JSON.stringify({ "username": username, "password_hash": password })
+            body: JSON.stringify({ "password_hash": password })
         });
-        const usernameElement = document.getElementById("username");
-        const passwordElement = document.getElementById("password");
-        if (res.status == 404) {
-            usernameElement.value = "";
-            passwordElement.value = "";
-            (_c = document.getElementById("login")) === null || _c === void 0 ? void 0 : _c.classList.add("was-validated");
-        }
-        else if (res.status == 201) {
+        if (res.status == 201) {
             window.location.href = '/fotos.html';
         }
-        else if (res.status == 200) {
-            window.location.href = '/otp.html';
+        else if (res.status == 401) {
+            window.location.href = '/index.html';
         }
     }));
     (_b = document.getElementById("showPassword")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", () => {
@@ -53,4 +54,4 @@ document.addEventListener("DOMContentLoaded", () => {
             eyeOpen.classList.add("d-none");
         }
     });
-});
+}));

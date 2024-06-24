@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>Fotoalbum</title>
     <link rel="stylesheet" href="style/index.css">
-    <script src="src/js/index.js"></script>
+    <script src="src/js/otp.js"></script>
 </head>
 <body>
 <div class="custom-infinitscroll">
@@ -26,14 +26,29 @@
             </div>
         </div>
         <div class="col-md-10 mx-auto col-lg-5">
-            <form id="login" class="p-4 p-md-5 border rounded-3 bg-body-tertiary">
+            <form id="login" class="p-4 p-md-5 border rounded-3 bg-body-tertiary needs-validation" novalidate>
                 <div class="form-floating mb-3">
-                    <input type="username" class="form-control" id="password" placeholder="password">
-                    <label for="password">password</label>
+                    <div class="form-floating d-flex flex-row">
+                        <input type="password" class="form-control" id="password" placeholder="password" required>
+                        <label for="password">password</label>
+                        <button id="showPassword" class="input-group-text" type="button">
+                            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                            </svg>
+                            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash-fill d-none" viewBox="0 0 16 16">
+                                <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7 7 0 0 0 2.79-.588M5.21 3.088A7 7 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474z"/>
+                                <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="invalid-feedback">Diese Feld darf nicht leer sein!</div>
                 </div>
                 <div class="form-floating mb-3">
-                    <input type="password" class="form-control" id="password_repeat" placeholder="repeat password">
+
+                    <input type="password" class="form-control" id="password_repeat" placeholder="repeat password" required>
                     <label for="password_repeat">repeat password</label>
+                    <div class="invalid-feedback">Passwörter stimmen nicht überein!</div>
                 </div>
                 <button class="w-100 btn btn-lg btn-info" type="submit">Anmelden</button>
             </form>

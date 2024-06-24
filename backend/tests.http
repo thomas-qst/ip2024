@@ -9,13 +9,14 @@ Content-Type: application/json
 
 {
   "username": "Admin",
-  "password_hash": "a4s5d4f56asd4f",
-  "OTP": false
+  "password_hash": "AdminUserPassword",
+  "OTP": false,
+  "is_Admin": true
 }
 ###
 
 ### get Pictures by Username
-GET http://localhost:8888/pictures/Admin
+GET http://localhost:8888/pictures
 ###
 
 ### Login
@@ -24,6 +25,6 @@ Content-Type: application/json
 
 {
   "username": "Admin",
-  "password_hash": "a4s5d4f56asd4f"
+  "password_hash": "AdminPassword"
 }
 ###

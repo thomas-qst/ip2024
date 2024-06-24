@@ -48,8 +48,26 @@ async function logout(){
 async function fetchImages(album? : string){
     //TODO: add function
     if(typeof album !== 'undefined'){
-
     }else{
-
+        try{
+            const res : Response = await fetch("http://localhost:8888/pictures", {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            const data = await res.json();
+            if(res.status == 401){
+                window.location.href = '/index.html';
+            }else if(res.status == 200){
+                let image = data.data[0].photo;
+                (document.getElementById("testImage") as HTMLImageElement).src = image;
+            }
+        }
+        catch (error){
+            console.error('Failed to fetch images', error);
+        }
     }
 }
