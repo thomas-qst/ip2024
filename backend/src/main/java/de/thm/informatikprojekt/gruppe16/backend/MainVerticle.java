@@ -76,6 +76,7 @@ public class MainVerticle extends AbstractVerticle {
 
     router.put("/tags/pictures/:picture_id").handler(this::addTagsToPicture);
     router.put("/tags/album/:album_id").handler(this::addTagsToAlbum);
+    router.put("/pictures/:picture_id").handler(this::updatePictureMetadata);
 
     router.patch("/albums/:album_id/:picture_id").handler(this::addPictureToAlbum);
     router.patch("/login").handler(this::changePassword);
@@ -196,14 +197,14 @@ public class MainVerticle extends AbstractVerticle {
       .end();
   }
 
-  public void getPicturesByUsername(RoutingContext ctx){
+  public void getPicturesByUsername(RoutingContext ctx) {
     String username = ctx.session().get("user");
 
-    if(username != null){
-      username = username.replaceAll("\\s+","");
+    if (username != null) {
+      username = username.replaceAll("\\s+", "");
     }
 
-    if(username == null || username.isEmpty()){
+    if (username == null || username.isEmpty()) {
       ctx.response()
         .putHeader("content-type", "application/json")
         .setStatusCode(401)
@@ -215,7 +216,7 @@ public class MainVerticle extends AbstractVerticle {
 
     JsonArray ja = new JsonArray();
     pool
-      .preparedQuery("SELECT * from photo where user = (?)")
+      .preparedQuery("SELECT * FROM photo WHERE user = ? ORDER BY photo_id DESC")
       .execute(Tuple.of(finalUsername))
       .onFailure(e -> {
         e.printStackTrace();
@@ -227,6 +228,7 @@ public class MainVerticle extends AbstractVerticle {
       .onSuccess(rows -> {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         List<Future> tagFutures = new ArrayList<>();
+        List<JsonObject> photoList = new ArrayList<>();
 
         for (Row row : rows) {
           JsonObject photoJson = new JsonObject();
@@ -238,7 +240,7 @@ public class MainVerticle extends AbstractVerticle {
             .put("date", row.getLocalDate("date").format(formatter));
 
           Future<Void> tagFuture = pool
-            .preparedQuery("SELECT tag FROM phototags WHERE photo_id = (?)")
+            .preparedQuery("SELECT tag FROM phototags WHERE photo_id = ?")
             .execute(Tuple.of(photoId))
             .compose(tagRows -> {
               JsonArray tags = new JsonArray();
@@ -246,7 +248,7 @@ public class MainVerticle extends AbstractVerticle {
                 tags.add(tagRow.getString("tag"));
               }
               photoJson.put("tags", tags);
-              ja.add(photoJson);
+              photoList.add(photoJson);
               return Future.succeededFuture();
             });
 
@@ -255,6 +257,11 @@ public class MainVerticle extends AbstractVerticle {
 
         CompositeFuture.all(tagFutures).onComplete(ar -> {
           if (ar.succeeded()) {
+            // Sort the photoList by photo_id in descending order
+            photoList.sort((a, b) -> Integer.compare(b.getInteger("photo_id"), a.getInteger("photo_id")));
+            for (JsonObject photo : photoList) {
+              ja.add(photo);
+            }
             ctx.response()
               .setStatusCode(200)
               .putHeader("content-type", "application/json")
@@ -310,43 +317,58 @@ public class MainVerticle extends AbstractVerticle {
     //TODO add function
   }
 
-  public void deletePicture(RoutingContext ctx){
-
-    String username = ctx.session().get("user");
+  public void deletePicture(RoutingContext ctx) {
+    String contextUsername = ctx.session().get("user");
     String pictureId = ctx.pathParam("picture_id");
-    if(username == null){
+
+    if (contextUsername == null || contextUsername.isEmpty()) {
       ctx.response()
         .putHeader("content-type", "application/json")
         .setStatusCode(401)
         .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
       return;
     }
-    pool
-      .preparedQuery("DELETE FROM photo where user = (?) and photo_id = (?)")
-      .execute(Tuple.of(username, pictureId))
-      .onFailure(e -> {
-        e.printStackTrace();
+
+    contextUsername = contextUsername.replaceAll("\\s+", "");
+    final String username = contextUsername;
+
+    Future<Void> deleteTagsFuture = pool
+      .preparedQuery("DELETE FROM phototags WHERE photo_id = ?")
+      .execute(Tuple.of(pictureId))
+      .compose(rows -> Future.succeededFuture());
+
+    Future<Void> deletePhotoFuture = deleteTagsFuture.compose(v ->
+      pool
+        .preparedQuery("DELETE FROM photo WHERE user = ? AND photo_id = ?")
+        .execute(Tuple.of(username, pictureId))
+        .compose(rows -> {
+          if (rows.rowCount() > 0) {
+            return Future.succeededFuture();
+          } else {
+            return Future.failedFuture("Picture not found");
+          }
+        })
+    );
+
+    deletePhotoFuture.onComplete(ar -> {
+      if (ar.succeeded()) {
+        ctx.response()
+          .setStatusCode(200)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("success", "Picture deleted!")));
+      } else if ("Picture not found".equals(ar.cause().getMessage())) {
+        ctx.response()
+          .setStatusCode(404)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found!")));
+      } else {
+        ar.cause().printStackTrace();
         ctx.response()
           .setStatusCode(500)
           .putHeader("content-type", "application/json")
           .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
-      })
-      .onSuccess(rows -> {
-        if(rows.rowCount() > 0){
-          ctx.response()
-            .setStatusCode(200)
-            .putHeader("content-type","application/json")
-            .end(Json.encodePrettily(new JsonObject().put("success","Picture deleted!")));
-        }else{
-          System.out.println("username: "+ username);
-          System.out.println("pictureId: "+ pictureId);
-          ctx.response()
-            .setStatusCode(404)
-            .putHeader("content-type", "application/json")
-            .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found!")));
-        }
-      });
-
+      }
+    });
   }
 
   public void deleteAlbum(RoutingContext ctx){
@@ -574,6 +596,108 @@ public class MainVerticle extends AbstractVerticle {
 
   public void addTagsToAlbum(RoutingContext ctx){
     //TODO add function
+  }
+
+  public void updatePictureMetadata(RoutingContext ctx) {
+    String pictureId = ctx.request().getParam("picture_id");
+    String username = ctx.session().get("user");
+
+    if (username == null || username.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    JsonObject jObj = ctx.getBodyAsJson();
+    if (jObj == null) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+      return;
+    }
+
+    List<Object> updateParams = new ArrayList<>();
+    StringBuilder updateQuery = new StringBuilder("UPDATE photo SET");
+
+    if (jObj.containsKey("title")) {
+      updateQuery.append(" title = ?,");
+      updateParams.add(jObj.getString("title"));
+    }
+
+    if (jObj.containsKey("date")) {
+      updateQuery.append(" date = ?,");
+      updateParams.add(LocalDate.parse(jObj.getString("date")));
+    }
+
+    if (updateParams.isEmpty() && !jObj.containsKey("tags")) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "No fields to update")));
+      return;
+    }
+
+    // Remove the last comma
+    if (updateQuery.charAt(updateQuery.length() - 1) == ',') {
+      updateQuery.deleteCharAt(updateQuery.length() - 1);
+    }
+
+    updateQuery.append(" WHERE photo_id = ? AND user = ?");
+    updateParams.add(pictureId);
+    updateParams.add(username);
+
+    Future<Void> updatePhotoFuture = pool
+      .preparedQuery(updateQuery.toString())
+      .execute(Tuple.wrap(updateParams.toArray()))
+      .compose(rows -> {
+        if (rows.rowCount() == 0) {
+          return Future.failedFuture("Photo not found or user not authorized");
+        }
+        return Future.succeededFuture();
+      });
+
+    if (jObj.containsKey("tags")) {
+      String[] tagsArray = jObj.getString("tags").split(" ");
+      List<Tuple> batch = new ArrayList<>();
+      for (String tag : tagsArray) {
+        batch.add(Tuple.of(pictureId, tag));
+      }
+
+      Future<Void> deleteTagsFuture = pool
+        .preparedQuery("DELETE FROM phototags WHERE photo_id = ?")
+        .execute(Tuple.of(pictureId))
+        .compose(rows -> Future.succeededFuture());
+
+      updatePhotoFuture = updatePhotoFuture.compose(v -> deleteTagsFuture)
+        .compose(v -> pool
+          .preparedQuery("INSERT INTO phototags (photo_id, tag) VALUES (?, ?)")
+          .executeBatch(batch)
+          .compose(rows -> Future.succeededFuture())
+        );
+    }
+
+    updatePhotoFuture.onComplete(ar -> {
+      if (ar.succeeded()) {
+        ctx.response()
+          .putHeader("content-type", "application/json")
+          .setStatusCode(200)
+          .end(Json.encodePrettily(new JsonObject().put("success", "Photo metadata updated")));
+      } else if ("Photo not found or user not authorized".equals(ar.cause().getMessage())) {
+        ctx.response()
+          .putHeader("content-type", "application/json")
+          .setStatusCode(404)
+          .end(Json.encodePrettily(new JsonObject().put("error", ar.cause().getMessage())));
+      } else {
+        ar.cause().printStackTrace();
+        ctx.response()
+          .putHeader("content-type", "application/json")
+          .setStatusCode(500)
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      }
+    });
   }
 
   public void addPictureToAlbum(RoutingContext ctx){

@@ -1,5 +1,5 @@
 let username : string;
-
+let selected : Array<number> = [];
 /**
  * Interface to use the relatedTarget of the BoostrapModalEvent
  */
@@ -105,8 +105,8 @@ function imageDivLeave(ev : Event){
 }
 
 /**
- * fetches the images from the backend and loads them on the page.
- * If the album param is set it only fetches the images contained in the album.
+ * fetches the images from the backend and loads them on the page by copying the BlankDiv and adjusting the ids etc.
+ * If the album param is set it only fetches the images contained on the album.
  *
  * @param {String} [album]
  * @return Promise<void>
@@ -145,16 +145,21 @@ async function fetchImages(album? : string){
                     let button = buttonDiv.children[0] as HTMLInputElement;
                     let buttonLable = buttonDiv.children[1] as HTMLLabelElement;
                     button.id = "imageButton-"+array[i].photo_id;
+                    button.addEventListener("change",(ev)=>{
+                        if(button.checked){
+                            addToSelected(ev);
+                        }else{
+                            removeFromSelected(ev);
+                        }
+                    })
                     buttonLable.htmlFor = button.id;
                     let metadataDiv = divCopy.children[2] as HTMLDivElement;
                     metadataDiv.id = "imageMetadata-"+array[i].photo_id;
                     (metadataDiv.children[1] as HTMLDivElement).innerText = array[i].date.toString();
                     (metadataDiv.children[0] as HTMLDivElement).innerText = array[i].title.toString();
                     let metadataTags = metadataDiv.children[2] as HTMLDivElement;
-                    console.log(array[i].tags);
                     array[i].tags.forEach(tag => {
                         let p = document.createElement("p");
-                        console.log("Tag: "+ tag);
                         p.innerText = tag;
                         metadataTags.append(p);
                     })
@@ -184,5 +189,27 @@ function resizeImage(imageElement : HTMLImageElement){
         imageElement.style.height = `${max_dimension}px`;
     }else{
         imageElement.style.width = `${max_dimension}px`;
+    }
+}
+
+
+function addToSelected(ev : Event){
+    const selectedDiv = document.getElementById("selectedDiv") as HTMLDivElement;
+    selectedDiv.classList.remove("d-none");
+    const imageId = (ev.target as HTMLImageElement).id.split("-")[1];
+    selected.push(Number(imageId));
+    console.log(selected);
+}
+
+function removeFromSelected(ev:Event){
+    const imageId = (ev.target as HTMLImageElement).id.split("-")[1];
+    const indexOfId = selected.indexOf(Number(imageId));
+    if(indexOfId > -1){
+        selected.splice(indexOfId,1);
+    }else{
+        console.error("Item not found in Index!");
+    }
+    if(selected.length == 0){
+        document.getElementById("selectedDiv")?.classList.add("d-none");
     }
 }
