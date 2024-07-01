@@ -10,7 +10,9 @@ CREATE TABLE User (
 
 CREATE TABLE Album(
     album_id int AUTO_INCREMENT PRIMARY KEY NOT NULL,
-    title VARCHAR(50) NOT NULL
+    title VARCHAR(50) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    FOREIGN KEY (username) references User(username)
 );
 
 CREATE TABLE Photo (
@@ -32,13 +34,6 @@ CREATE TABLE AlbumTags(
     album_id INT,
     tag VARCHAR(32) NOT NULL,
     FOREIGN KEY (album_id) references Album(album_id)
-);
-
-CREATE TABLE AlbumUser(
-    album_id INT,
-    username VARCHAR(32),
-    FOREIGN KEY (album_id) REFERENCES Album(album_id),
-    FOREIGN KEY (username) REFERENCES User(username)
 );
 
 CREATE TABLE AlbumFoto(

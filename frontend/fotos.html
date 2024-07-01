@@ -10,12 +10,9 @@
 <body class="overflow-hidden">
 <header class="border-bottom data-bs-theme=”dark" style="height: 8vh;">
     <div class="container h-100">
-        <div class="d-inline-block align-middle position-relative" style="top: 20%">
+        <div class="d-inline-block align-middle position-relative" style="top: 10%">
             <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decorattion-none">
-                <svg class="bi pe-none me-2" width="40" height="32">
-                    <!-- HIER UNSER LOGO -->
-                    <use xlink:href="#bootstrap"></use>
-                </svg>
+                <img alt="Logo" src="Logo2.png" height="50" width="50"/>
             </a>
         </div>
         <div class="d-inline-block align-middle position-relative align-" style="top: 20%">
@@ -68,11 +65,18 @@
         </ul>
     </div>
     <main>
-        <div class="d-flex flex-row flex-wrap">
-            <div id="image1" style="height: 50rem;width: 50rem">
-                <button></button>
-                <img style="height: 50rem;width: 50rem" id="testImage"alt="" src="">
-                <div></div>
+        <div id="imageContainer" class="d-flex flex-row flex-wrap">
+            <div id="BlankImageDiv" class="d-none p-3">
+                <div class="btn-group position-absolute" aria-label="Basic checkbox toggle button group">
+                    <input type="checkbox" class="btn-check" autocomplete="off" id="BlankImageCheckbox">
+                    <label class="btn btn-outline-primary position-absolute d-none" for="BlankImageCheckbox"></label>
+                </div>
+                <img class="z-n1" id="BlankImage" data-bs-toggle="modal" data-bs-target="#image-modal" alt="" src="">
+                <div class="d-none position-relative opacity-50 bg-secondary-subtle" style="top: -16%" id="BlankImageMetadata">
+                    <div></div>
+                    <div></div>
+                    <div class="d-none"></div>
+                </div>
             </div>
         </div>
         <div class="position-fixed" style="right: 3rem;bottom: 3rem">
@@ -117,6 +121,29 @@
             <div class="modal-footer">
                 <button id="upload-modal-close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button id="upload-modal-submit" type="button" class="btn btn-primary">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" id="image-modal">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Image</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
+            </div>
+            <div class="modal-body">
+                <img id="image-modal-image" alt="" src="">
+                <p id="image-modal-title"></p>
+                <p id="image-modal-date"></p>
+                <p id="image-modal-tags"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="image-modal-delete" type="button" class="btn btn-danger">Delete</button>
+                <button id="image-modal-edit" type="button" class="btn btn-secondary">Edit</button>
+                <button id="image-modal-download" type="button" class="btn btn-secondary">Download</button>
+                <button id="image-modal-close" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

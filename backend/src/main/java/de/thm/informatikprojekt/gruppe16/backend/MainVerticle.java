@@ -1,6 +1,8 @@
 package de.thm.informatikprojekt.gruppe16.backend;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -20,11 +22,8 @@ import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
-import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import java.time.LocalDate;
 
@@ -65,9 +64,9 @@ public class MainVerticle extends AbstractVerticle {
     router.get("/users/:username").handler(this::getUserbyUsername);
     router.get("/login/username").handler(this::getUsernameFromSession);
 
-    router.delete("/users/delete/:username").handler(this::deleteUser);
-    router.delete("/pictures/delete/:picture_id").handler(this::deletePicture);
-    router.delete("/albums/delete/:album_id").handler(this::deleteAlbum);
+    router.delete("/users/:username").handler(this::deleteUser);
+    router.delete("/pictures/:picture_id").handler(this::deletePicture);
+    router.delete("/albums/:album_id").handler(this::deleteAlbum);
     router.delete("/login").handler(this::deleteSession);
 
     router.post("/login").handler(this::login);
@@ -76,7 +75,7 @@ public class MainVerticle extends AbstractVerticle {
     router.post("/album").handler(this::addAlbum);
 
     router.put("/tags/pictures/:picture_id").handler(this::addTagsToPicture);
-    router.put("/tags/album/:picture_id").handler(this::addTagsToAlbum);
+    router.put("/tags/album/:album_id").handler(this::addTagsToAlbum);
 
     router.patch("/albums/:album_id/:picture_id").handler(this::addPictureToAlbum);
     router.patch("/login").handler(this::changePassword);
@@ -126,8 +125,8 @@ public class MainVerticle extends AbstractVerticle {
         .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
       return;
     }
-    String username = (String) jObj.getString("username");
-    String password = (String) jObj.getString("password_hash");
+    String username = jObj.getString("username");
+    String password = jObj.getString("password_hash");
 
 
     if(username != null && password != null){
@@ -227,19 +226,47 @@ public class MainVerticle extends AbstractVerticle {
       })
       .onSuccess(rows -> {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        for(Row row: rows){
+        List<Future> tagFutures = new ArrayList<>();
+
+        for (Row row : rows) {
           JsonObject photoJson = new JsonObject();
+          int photoId = row.getInteger("photo_id");
           photoJson
-            .put("photo_id", row.getInteger("photo_id"))
+            .put("photo_id", photoId)
             .put("title", row.getString("title"))
             .put("photo", row.getString("photo"))
             .put("date", row.getLocalDate("date").format(formatter));
-          ja.add(photoJson);
+
+          Future<Void> tagFuture = pool
+            .preparedQuery("SELECT tag FROM phototags WHERE photo_id = (?)")
+            .execute(Tuple.of(photoId))
+            .compose(tagRows -> {
+              JsonArray tags = new JsonArray();
+              for (Row tagRow : tagRows) {
+                tags.add(tagRow.getString("tag"));
+              }
+              photoJson.put("tags", tags);
+              ja.add(photoJson);
+              return Future.succeededFuture();
+            });
+
+          tagFutures.add(tagFuture);
         }
-        ctx.response()
-          .setStatusCode(200)
-          .putHeader("content-type","application/json")
-          .end(Json.encodePrettily(new JsonObject().put("success","Pictures found").put("data", ja)));
+
+        CompositeFuture.all(tagFutures).onComplete(ar -> {
+          if (ar.succeeded()) {
+            ctx.response()
+              .setStatusCode(200)
+              .putHeader("content-type", "application/json")
+              .end(Json.encodePrettily(new JsonObject().put("success", "Pictures found").put("data", ja)));
+          } else {
+            ar.cause().printStackTrace();
+            ctx.response()
+              .setStatusCode(500)
+              .putHeader("content-type", "application/json")
+              .end(Json.encodePrettily(new JsonObject().put("error", "Failed to fetch tags")));
+          }
+        });
       });
   }
 
@@ -284,7 +311,42 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void deletePicture(RoutingContext ctx){
-    //TODO add function
+
+    String username = ctx.session().get("user");
+    String pictureId = ctx.pathParam("picture_id");
+    if(username == null){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
+      return;
+    }
+    pool
+      .preparedQuery("DELETE FROM photo where user = (?) and photo_id = (?)")
+      .execute(Tuple.of(username, pictureId))
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(rows -> {
+        if(rows.rowCount() > 0){
+          ctx.response()
+            .setStatusCode(200)
+            .putHeader("content-type","application/json")
+            .end(Json.encodePrettily(new JsonObject().put("success","Picture deleted!")));
+        }else{
+          System.out.println("username: "+ username);
+          System.out.println("pictureId: "+ pictureId);
+          ctx.response()
+            .setStatusCode(404)
+            .putHeader("content-type", "application/json")
+            .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found!")));
+        }
+      });
+
   }
 
   public void deleteAlbum(RoutingContext ctx){
@@ -292,7 +354,33 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addUser(RoutingContext ctx){
-    //TODO add auth
+    String requestUser = ctx.session().get("user");
+    pool
+      .preparedQuery("select is_Admin from user where username = (?)")
+      .execute(Tuple.of(requestUser))
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(rows -> {
+        if(rows.size() < 1){
+          ctx.response()
+            .setStatusCode(401)
+            .putHeader("content-type", "application/json")
+            .end(Json.encodePrettily(new JsonObject().put("error", "User not in Database!")));
+          return;
+        }
+        if(!rows.iterator().next().getBoolean("is_Admin")){
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(401)
+            .end(Json.encodePrettily(new JsonObject().put("error","Only Admin can add Users!")));
+        }
+      });
+
     JsonObject jObj = ctx.getBodyAsJson();
     if(jObj == null){
       ctx.response()
@@ -301,8 +389,8 @@ public class MainVerticle extends AbstractVerticle {
         .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
       return;
     }
-    String username = (String) jObj.getString("username");
-    String password_hash = passwordHash((String) jObj.getString("password_hash"));
+    String username = jObj.getString("username");
+    String password_hash = passwordHash(jObj.getString("password_hash"));
     boolean otp;
     if(!jObj.containsKey("OTP")){
       otp = true;
@@ -335,7 +423,6 @@ public class MainVerticle extends AbstractVerticle {
           .setStatusCode(500)
           .putHeader("content-type", "application/json")
           .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
-        return;
       })
       .onSuccess(rows -> {
         if(rows.size() > 0){
@@ -354,18 +441,22 @@ public class MainVerticle extends AbstractVerticle {
                 .putHeader("content-type", "application/json")
                 .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
             })
-            .onSuccess(insertRows -> {
-              ctx.response()
-                .setStatusCode(201)
-                .putHeader("content-type", "application/json")
-                .end(Json.encodePrettily(new JsonObject().put("success", "User added to Database")));
-            });
+            .onSuccess(insertRows -> ctx.response()
+              .setStatusCode(201)
+              .putHeader("content-type", "application/json")
+              .end(Json.encodePrettily(new JsonObject().put("success", "User added to Database"))));
         }
       });
   }
 
   public void addPicture(RoutingContext ctx){
-    //TODO add auth
+    String username = ctx.session().get("user");
+    if(username == null || username.isEmpty()){
+      ctx.response()
+        .putHeader("content-type" ,"application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+    }
     JsonObject jObj = ctx.getBodyAsJson();
     if(jObj == null){
       ctx.response()
@@ -375,10 +466,9 @@ public class MainVerticle extends AbstractVerticle {
       return;
     }
 
-    final String title = (String) jObj.getString("title");
-    final String photo = (String)jObj.getString("photo");
+    final String title = jObj.getString("title");
+    final String photo = jObj.getString("photo");
     final LocalDate date = LocalDate.now();
-    String username = ctx.session().get("user");
 
     if(username != null){
       username = username.replaceAll("\\s+","");
@@ -394,22 +484,40 @@ public class MainVerticle extends AbstractVerticle {
 
     final String finalUsername = username;
 
-    pool
-      .preparedQuery("INSERT INTO photo (title, photo, date, user) VALUES (?, ?, ?, ?)")
-      .execute(Tuple.of(title, photo, date, finalUsername))
-      .onFailure(e -> {
-        e.printStackTrace();
-        ctx.response()
-          .setStatusCode(500)
-          .putHeader("content-type", "application/json")
-          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
-      })
-      .onSuccess(insertRows -> {
-        ctx.response()
-          .setStatusCode(201)
-          .putHeader("content-type", "application/json")
-          .end(Json.encodePrettily(new JsonObject().put("success", "Photo added to Database")));
-      });
+    pool.getConnection().compose(conn ->
+      conn.begin().compose(tx ->
+        conn.preparedQuery("INSERT INTO photo (title, photo, date, user) VALUES (?, ?, ?, ?)")
+          .execute(Tuple.of(title, photo, date, finalUsername))
+          .compose(insertResult ->
+            conn.query("SELECT LAST_INSERT_ID() AS photo_id")
+              .execute()
+              .compose(selectResult -> {
+                tx.commit();
+                Row row = selectResult.iterator().next();
+                int photoId = row.getInteger("photo_id");
+                ctx.response()
+                  .setStatusCode(201)
+                  .putHeader("content-type", "application/json")
+                  .end(Json.encodePrettily(new JsonObject().put("success", "Photo added to Database").put("photo_id", photoId)));
+                return conn.close();
+              })
+          ).onFailure(e -> {
+            tx.rollback();
+            conn.close();
+            e.printStackTrace();
+            ctx.response()
+              .setStatusCode(500)
+              .putHeader("content-type", "application/json")
+              .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+          })
+      )
+    ).onFailure(e -> {
+      e.printStackTrace();
+      ctx.response()
+        .setStatusCode(500)
+        .putHeader("content-type", "application/json")
+        .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+    });
   }
 
   public void addAlbum(RoutingContext ctx){
@@ -417,7 +525,51 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addTagsToPicture(RoutingContext ctx){
-    //TODO add function
+    String pictureId = ctx.request().getParam("picture_Id");
+    String username = ctx.session().get("user");
+    if(username == null || username.isEmpty()){
+      ctx.response()
+        .putHeader("content-type" ,"application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+    JsonObject jObj = ctx.getBodyAsJson();
+    if(jObj == null){
+      ctx.response()
+        .putHeader("content-type" ,"application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+      return;
+    }
+    String tags = jObj.getString("tags");
+    if(tags == null || tags.isEmpty()){
+      ctx.response()
+        .putHeader("content-type" ,"application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+      return;
+    }
+    String[] tagsArray = tags.split(" ");
+    List<Tuple> batch = new ArrayList<>();
+    for (String tag : tagsArray) {
+      batch.add(Tuple.of(pictureId, tag));
+    }
+
+    pool
+      .preparedQuery("INSERT INTO phototags (photo_id, tag) VALUES (?, ?)")
+      .executeBatch(batch)
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(rows -> ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(201)
+        .end(Json.encodePrettily(new JsonObject().put("success", "Tags added to database"))));
   }
 
   public void addTagsToAlbum(RoutingContext ctx){
@@ -438,9 +590,9 @@ public class MainVerticle extends AbstractVerticle {
         .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
       return;
     }
-    String password_hash = passwordHash((String) jObj.getString("password_hash"));
+    String password_hash = passwordHash(jObj.getString("password_hash"));
     String username = ctx.session().get("user");
-    if(username == null){
+    if(username == null || username.isEmpty()){
       ctx.response()
         .setStatusCode(401)
         .putHeader("content-type", "application/json")
@@ -456,12 +608,10 @@ public class MainVerticle extends AbstractVerticle {
           .putHeader("content-type", "application/json")
           .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
       })
-      .onSuccess(updateRows -> {
-        ctx.response()
-          .putHeader("content-type", "application/json")
-          .setStatusCode(201)
-          .end(Json.encodePrettily(new JsonObject().put("success", "Password updated")));
-      });
+      .onSuccess(updateRows -> ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(201)
+        .end(Json.encodePrettily(new JsonObject().put("success", "Password updated"))));
 
   }
 

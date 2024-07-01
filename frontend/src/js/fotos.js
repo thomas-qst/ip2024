@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     yield getUsername();
     const userElement = document.getElementById("user");
     if (userElement != null) {
@@ -79,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         const title = document.getElementById("upload-modal-title").value;
         const tags = document.getElementById("upload-modal-tags").value;
         const errorElement = document.getElementById("upload-modal-error");
-        const tagArray = tags.split(" ");
         let imageAsText;
         const reader = new FileReader();
         if (file == null) {
@@ -90,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             return;
         }
         reader.onload = (event) => __awaiter(void 0, void 0, void 0, function* () {
-            var _j;
+            var _m;
             imageAsText = reader.result;
             try {
                 console.log(imageAsText);
@@ -105,7 +104,25 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                 });
                 const data = yield res.json();
                 if (res.ok) {
-                    (_j = document.getElementById("upload-modal-close")) === null || _j === void 0 ? void 0 : _j.click();
+                    const photoID = data.photo_id;
+                    try {
+                        const res = yield fetch("http://localhost:8888/tags/pictures/" + photoID, {
+                            method: "put",
+                            mode: "cors",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            credentials: "include",
+                            body: JSON.stringify({ "tags": tags })
+                        });
+                        const data = yield res.json();
+                        if (res.ok) {
+                            (_m = document.getElementById("upload-modal-close")) === null || _m === void 0 ? void 0 : _m.click();
+                        }
+                    }
+                    catch (error) {
+                        console.error("Failed to upload Tags", error);
+                    }
                 }
             }
             catch (error) {
@@ -113,5 +130,54 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             }
         });
         reader.readAsDataURL(file[0]);
+    }));
+    (_j = document.getElementById("image-modal")) === null || _j === void 0 ? void 0 : _j.addEventListener("show.bs.modal", (event) => {
+        const ev = event;
+        const imageDiv = ev.relatedTarget.parentElement;
+        const img = ev.relatedTarget;
+        const metadata = imageDiv.children[2];
+        const modalTags = document.getElementById("image-modal-tags");
+        let modalImage = document.getElementById("image-modal-image");
+        modalImage.src = img.src;
+        modalImage.alt = img.id;
+        let modalTitle = document.getElementById("image-modal-title");
+        modalTitle.innerText = "Title: " + metadata.children[0].innerHTML;
+        let modalDate = document.getElementById("image-modal-date");
+        modalDate.innerText = "Date: " + metadata.children[1].innerHTML;
+        modalTags.innerHTML = "Tags: " + metadata.children[2].innerHTML;
+    });
+    (_k = document.getElementById("image-modal-download")) === null || _k === void 0 ? void 0 : _k.addEventListener("click", (ev) => {
+        var _a, _b;
+        const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
+        const imageType = image.src.split(";")[0].split("/")[1];
+        let a = document.createElement("a");
+        a.href = image.src;
+        a.download = "Image." + imageType;
+        a.click();
+    });
+    (_l = document.getElementById("image-modal-delete")) === null || _l === void 0 ? void 0 : _l.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        var _o, _p, _q, _r;
+        const image = (_p = (_o = ev.target.parentElement) === null || _o === void 0 ? void 0 : _o.parentElement) === null || _p === void 0 ? void 0 : _p.children[1].children[0];
+        const imageId = image.alt.split("-")[1];
+        console.log(imageId);
+        try {
+            const res = yield fetch("http://localhost:8888/pictures/" + imageId, {
+                method: 'delete',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            const data = yield res.json();
+            if (res.status == 200) {
+                let closeButton = (_q = ev.target.parentElement) === null || _q === void 0 ? void 0 : _q.children[3];
+                closeButton.click();
+                (_r = document.getElementById("imageDiv-" + imageId)) === null || _r === void 0 ? void 0 : _r.remove();
+            }
+        }
+        catch (err) {
+            console.error("Failed to delete Image", err);
+        }
     }));
 }));

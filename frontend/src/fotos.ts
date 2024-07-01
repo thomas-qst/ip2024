@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', async () => {
     await getUsername();
     const userElement = document.getElementById("user");
@@ -15,8 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("upload")?.addEventListener("click", async (event)=>{
         event.preventDefault();
-
     });
+
+
     document.getElementById("upload-modal-dropcontainer")?.addEventListener("dragover", (event)=>{
         event.stopPropagation();
         event.preventDefault();
@@ -71,12 +73,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById("upload-modal-submit")?.addEventListener("click", async () => {
-        //TODO: add tags upload
         const file = (document.getElementById("upload-modal-input") as HTMLInputElement).files;
         const title = (document.getElementById("upload-modal-title") as HTMLInputElement).value;
         const tags = (document.getElementById("upload-modal-tags") as HTMLInputElement).value;
         const errorElement = document.getElementById("upload-modal-error") as HTMLElement;
-        const tagArray = tags.split(" ");
         let imageAsText;
         const reader = new FileReader();
         if(file ==  null){
@@ -102,7 +102,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    document.getElementById("upload-modal-close")?.click();
+                    const photoID = data.photo_id;
+                    try{
+                        const res = await fetch("http://localhost:8888/tags/pictures/"+photoID, {
+                            method: "put",
+                            mode: "cors",
+                            headers:
+                                {
+                                    "Content-Type": "application/json"
+                                },
+                            credentials: "include",
+                            body: JSON.stringify({"tags": tags})
+                        });
+                        const data = await res.json();
+                        if(res.ok){
+                            document.getElementById("upload-modal-close")?.click();
+                        }
+                    }catch(error){
+                        console.error("Failed to upload Tags", error);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to upload Image", error);
@@ -111,6 +129,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         reader.readAsDataURL(file[0]);
 
     });
+
+
+
+    document.getElementById("image-modal")?.addEventListener("show.bs.modal",(event) => {
+        const ev = event as BootstrapModalEvent;
+        const imageDiv = ev.relatedTarget.parentElement as HTMLDivElement;
+        const img = ev.relatedTarget as HTMLImageElement;
+        const metadata = imageDiv.children[2];
+        const modalTags = document.getElementById("image-modal-tags") as HTMLParagraphElement;
+        let modalImage = document.getElementById("image-modal-image") as HTMLImageElement;
+        modalImage.src = img.src;
+        modalImage.alt = img.id;
+        let modalTitle = document.getElementById("image-modal-title") as HTMLParagraphElement;
+        modalTitle.innerText = "Title: " + metadata.children[0].innerHTML;
+        let modalDate = document.getElementById("image-modal-date") as HTMLParagraphElement;
+        modalDate.innerText = "Date: " + metadata.children[1].innerHTML;
+        modalTags.innerHTML = "Tags: " + metadata.children[2].innerHTML;
+    });
+
+    document.getElementById("image-modal-download")?.addEventListener("click", (ev) =>{
+        const image = (ev.target as HTMLButtonElement).parentElement?.parentElement?.children[1].children[0] as HTMLImageElement;
+        const imageType = image.src.split(";")[0].split("/")[1];
+        let a = document.createElement("a");
+        a.href = image.src;
+        a.download = "Image."+imageType;
+        a.click();
+    });
+
+    document.getElementById("image-modal-delete")?.addEventListener("click", async (ev) =>{
+        const image = (ev.target as HTMLButtonElement).parentElement?.parentElement?.children[1].children[0] as HTMLImageElement;
+        const imageId = image.alt.split("-")[1];
+        console.log(imageId);
+        try{
+            const res : Response = await fetch("http://localhost:8888/pictures/"+imageId, {
+                method: 'delete',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            const data = await res.json();
+            if(res.status == 200){
+                let closeButton = (ev.target as HTMLButtonElement).parentElement?.children[3] as HTMLButtonElement;
+                closeButton.click();
+                document.getElementById("imageDiv-"+imageId)?.remove();
+            }
+        }catch(err){
+            console.error("Failed to delete Image", err);
+        }
+    })
+
 });
 
 
