@@ -11,6 +11,7 @@ CREATE TABLE User (
 CREATE TABLE Album(
     album_id int AUTO_INCREMENT PRIMARY KEY NOT NULL,
     title VARCHAR(50) NOT NULL,
+    date date not NULL,
     username VARCHAR(32) NOT NULL,
     FOREIGN KEY (username) references User(username)
 );

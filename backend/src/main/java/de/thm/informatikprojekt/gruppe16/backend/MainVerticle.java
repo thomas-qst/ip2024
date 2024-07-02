@@ -314,7 +314,99 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void deleteUser(RoutingContext ctx){
-    //TODO add function
+    String usernameToDelete = ctx.pathParam("username");
+    String requestingUser = ctx.session().get("user");
+
+    if (requestingUser == null || requestingUser.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    // Check if the requesting user is an admin
+    pool.preparedQuery("SELECT is_Admin FROM user WHERE username = ?")
+      .execute(Tuple.of(requestingUser))
+      .compose(rows -> {
+        if (rows.size() == 0) {
+          return Future.failedFuture("Requesting user not found");
+        }
+        boolean isAdmin = rows.iterator().next().getBoolean("is_Admin");
+        if (!isAdmin && !requestingUser.equals(usernameToDelete)) {
+          return Future.failedFuture("Not authorized to delete this user");
+        }
+        return Future.succeededFuture();
+      })
+      .compose(v -> {
+        // Start a transaction
+        return pool.getConnection().compose(conn -> {
+          return conn.begin().compose(tx -> {
+            // Delete user's photos and related data
+            return conn.preparedQuery("DELETE FROM phototags WHERE photo_id IN (SELECT photo_id FROM photo WHERE user = ?)")
+              .execute(Tuple.of(usernameToDelete))
+              .compose(v1 -> conn.preparedQuery("DELETE FROM albumfoto WHERE photo_id IN (SELECT photo_id FROM photo WHERE user = ?)")
+                .execute(Tuple.of(usernameToDelete)))
+              .compose(v2 -> conn.preparedQuery("DELETE FROM photo WHERE user = ?")
+                .execute(Tuple.of(usernameToDelete)))
+              // Delete user's albums and related data
+              .compose(v3 -> conn.preparedQuery("DELETE FROM albumtags WHERE album_id IN (SELECT album_id FROM album WHERE username = ?)")
+                .execute(Tuple.of(usernameToDelete)))
+              .compose(v4 -> conn.preparedQuery("DELETE FROM albumfoto WHERE album_id IN (SELECT album_id FROM album WHERE username = ?)")
+                .execute(Tuple.of(usernameToDelete)))
+              .compose(v5 -> conn.preparedQuery("DELETE FROM album WHERE username = ?")
+                .execute(Tuple.of(usernameToDelete)))
+              // Finally, delete the user
+              .compose(v6 -> conn.preparedQuery("DELETE FROM user WHERE username = ?")
+                .execute(Tuple.of(usernameToDelete)))
+              .compose(v7 -> {
+                if (v7.rowCount() == 0) {
+                  return Future.failedFuture("User not found");
+                }
+                return tx.commit();
+              })
+              .onComplete(ar -> {
+                conn.close();
+                if (ar.succeeded()) {
+                  ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(200)
+                    .end(Json.encodePrettily(new JsonObject().put("success", "User deleted")));
+                } else {
+                  tx.rollback();
+                  String errorMessage = ar.cause().getMessage();
+                  if ("User not found".equals(errorMessage)) {
+                    ctx.response()
+                      .putHeader("content-type", "application/json")
+                      .setStatusCode(404)
+                      .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+                  } else {
+                    ar.cause().printStackTrace();
+                    ctx.response()
+                      .putHeader("content-type", "application/json")
+                      .setStatusCode(500)
+                      .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+                  }
+                }
+              });
+          });
+        });
+      })
+      .onFailure(e -> {
+        String errorMessage = e.getMessage();
+        if ("Requesting user not found".equals(errorMessage) || "Not authorized to delete this user".equals(errorMessage)) {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(403)
+            .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+        } else {
+          e.printStackTrace();
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(500)
+            .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+        }
+      });
   }
 
   public void deletePicture(RoutingContext ctx) {
@@ -372,7 +464,81 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void deleteAlbum(RoutingContext ctx){
-    //TODO add function
+    String albumId = ctx.pathParam("album_id");
+    String username = ctx.session().get("user");
+
+    if (username == null || username.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    pool.getConnection()
+      .compose(conn -> {
+        return conn.begin().compose(tx -> {
+          // Check if the user owns the album
+          return conn.preparedQuery("SELECT 1 FROM album WHERE album_id = ? AND username = ?")
+            .execute(Tuple.of(albumId, username))
+            .compose(rows -> {
+              if (rows.size() == 0) {
+                return Future.failedFuture("Album not found or user not authorized");
+              }
+              return Future.succeededFuture();
+            })
+            .compose(v -> {
+              // Delete tags associated with the album
+              return conn.preparedQuery("DELETE FROM albumtags WHERE album_id = ?")
+                .execute(Tuple.of(albumId));
+            })
+            .compose(v -> {
+              // Delete photo associations with the album
+              return conn.preparedQuery("DELETE FROM albumfoto WHERE album_id = ?")
+                .execute(Tuple.of(albumId));
+            })
+            .compose(v -> {
+              // Delete the album itself
+              return conn.preparedQuery("DELETE FROM album WHERE album_id = ?")
+                .execute(Tuple.of(albumId));
+            })
+            .compose(v -> {
+              // Commit the transaction
+              return tx.commit();
+            })
+            .onComplete(ar -> {
+              // Always close the connection
+              conn.close();
+              if (ar.succeeded()) {
+                ctx.response()
+                  .putHeader("content-type", "application/json")
+                  .setStatusCode(200)
+                  .end(Json.encodePrettily(new JsonObject().put("success", "Album deleted")));
+              } else {
+                String errorMessage = ar.cause().getMessage();
+                if ("Album not found or user not authorized".equals(errorMessage)) {
+                  ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(404)
+                    .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+                } else {
+                  ar.cause().printStackTrace();
+                  ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(500)
+                    .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+                }
+              }
+            });
+        });
+      })
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .putHeader("content-type", "application/json")
+          .setStatusCode(500)
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database connection error")));
+      });
   }
 
   public void addUser(RoutingContext ctx){
@@ -543,7 +709,51 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addAlbum(RoutingContext ctx){
-    //TODO add function
+    JsonObject jObj = ctx.getBodyAsJson();
+    if(jObj == null){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+      return;
+    }
+
+    final String title = (String) jObj.getString("title");
+    final String album = (String)jObj.getString("album");
+    final LocalDate date = LocalDate.now();
+    String username = ctx.session().get("user");
+
+    if(username != null){
+      username = username.replaceAll("\\s+","");
+    }
+
+    if(username == null || username.isEmpty() || title == null || title.isEmpty() || album.isEmpty()){
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Failed to add Album. Missing Arguments")));
+      return;
+    }
+
+    final String finalUsername = username;
+
+    pool
+      .preparedQuery("INSERT INTO album (title, date, username) VALUES (?, ?, ?)")
+      .execute(Tuple.of(title, date, finalUsername))
+      .onFailure(e -> {
+        e.printStackTrace();
+        ctx.response()
+          .setStatusCode(500)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+      })
+      .onSuccess(insertRows -> {
+        ctx.response()
+          .setStatusCode(201)
+          .putHeader("content-type", "application/json")
+          .end(Json.encodePrettily(new JsonObject().put("success", "Photo added to Database")));
+      });
+
   }
 
   public void addTagsToPicture(RoutingContext ctx){
@@ -595,7 +805,80 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addTagsToAlbum(RoutingContext ctx){
-    //TODO add function
+    String albumId = ctx.request().getParam("album_id");
+    String username = ctx.session().get("user");
+
+    if (username == null || username.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    JsonObject jObj = ctx.getBodyAsJson();
+    if (jObj == null || !jObj.containsKey("tags")) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON or missing tags")));
+      return;
+    }
+
+    String tags = jObj.getString("tags");
+    if (tags == null || tags.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(400)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Tags cannot be empty")));
+      return;
+    }
+
+    pool.preparedQuery("SELECT 1 FROM album WHERE album_id = ? AND username = ?")
+      .execute(Tuple.of(albumId, username))
+      .compose(rows -> {
+        if (rows.size() == 0) {
+          return Future.failedFuture("Album not found or user not authorized");
+        }
+        return Future.succeededFuture();
+      })
+      .compose(v -> {
+        // Delete existing tags for this album
+        return pool.preparedQuery("DELETE FROM albumtags WHERE album_id = ?")
+          .execute(Tuple.of(albumId));
+      })
+      .compose(v -> {
+        // Insert new tags
+        String[] tagsArray = tags.split(" ");
+        List<Tuple> batch = new ArrayList<>();
+        for (String tag : tagsArray) {
+          batch.add(Tuple.of(albumId, tag));
+        }
+        return pool.preparedQuery("INSERT INTO albumtags (album_id, tag) VALUES (?, ?)")
+          .executeBatch(batch);
+      })
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(200)
+            .end(Json.encodePrettily(new JsonObject().put("success", "Tags added to album")));
+        } else {
+          String errorMessage = ar.cause().getMessage();
+          if ("Album not found or user not authorized".equals(errorMessage)) {
+            ctx.response()
+              .putHeader("content-type", "application/json")
+              .setStatusCode(404)
+              .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+          } else {
+            ar.cause().printStackTrace();
+            ctx.response()
+              .putHeader("content-type", "application/json")
+              .setStatusCode(500)
+              .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+          }
+        }
+      });
   }
 
   public void updatePictureMetadata(RoutingContext ctx) {
@@ -701,7 +984,63 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void addPictureToAlbum(RoutingContext ctx){
-    //TODO add function
+    String albumId = ctx.request().getParam("album_id");
+    String pictureId = ctx.request().getParam("picture_id");
+    String username = ctx.session().get("user");
+
+    if (username == null || username.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    Future<Boolean> checkOwnershipFuture = pool
+      .preparedQuery("SELECT 1 FROM album WHERE album_id = ? AND username = ?")
+      .execute(Tuple.of(albumId, username))
+      .compose(albumRows -> {
+        if (albumRows.size() == 0) {
+          return Future.failedFuture("Album not found or user not authorized");
+        }
+        return pool
+          .preparedQuery("SELECT 1 FROM photo WHERE photo_id = ? AND user = ?")
+          .execute(Tuple.of(pictureId, username));
+      })
+      .compose(photoRows -> {
+        if (photoRows.size() == 0) {
+          return Future.failedFuture("Picture not found or user not authorized");
+        }
+        return Future.succeededFuture(true);
+      });
+
+    checkOwnershipFuture.compose(v ->
+      pool
+        .preparedQuery("INSERT INTO albumfoto (album_id, photo_id) VALUES (?, ?)")
+        .execute(Tuple.of(albumId, pictureId))
+    ).onComplete(ar -> {
+      if (ar.succeeded()) {
+        ctx.response()
+          .putHeader("content-type", "application/json")
+          .setStatusCode(201)
+          .end(Json.encodePrettily(new JsonObject().put("success", "Picture added to album")));
+      } else {
+        String errorMessage = ar.cause().getMessage();
+        if ("Album not found or user not authorized".equals(errorMessage) ||
+          "Picture not found or user not authorized".equals(errorMessage)) {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(404)
+            .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+        } else {
+          ar.cause().printStackTrace();
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(500)
+            .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+        }
+      }
+    });
   }
 
 
