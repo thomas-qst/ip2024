@@ -1,3 +1,4 @@
+let selectedAlbum : Array<number> = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     await getUsername();
@@ -89,7 +90,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         reader.onload = async (event) => {
             imageAsText = reader.result;
             try {
-                console.log(imageAsText);
                 const res = await fetch("http://localhost:8888/pictures", {
                     method: "POST",
                     mode: "cors",
@@ -139,23 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-    document.getElementById("image-modal")?.addEventListener("show.bs.modal",(event) => {
-        const ev = event as BootstrapModalEvent;
-        const imageDiv = ev.relatedTarget.parentElement as HTMLDivElement;
-        const img = ev.relatedTarget as HTMLImageElement;
-        const metadata = imageDiv.children[2];
-        const modalTags = document.getElementById("image-modal-tags") as HTMLParagraphElement;
-        let modalImage = document.getElementById("image-modal-image") as HTMLImageElement;
-        modalImage.src = img.src;
-        modalImage.alt = img.id;
-        let modalTitle = document.getElementById("image-modal-title") as HTMLDivElement;
-        modalTitle.append(document.createElement("p"));
-        (modalTitle.children[1] as HTMLParagraphElement).textContent = metadata.children[0].innerHTML;
-        let modalDate = document.getElementById("image-modal-date") as HTMLParagraphElement;
-        modalDate.append(document.createElement("p"));
-        (modalDate.children[1] as HTMLParagraphElement).textContent = metadata.children[1].innerHTML;
-        modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
-    });
+    document.getElementById("image-modal")?.addEventListener("show.bs.modal",insertImageDataToModal);
 
     document.getElementById("image-modal")?.addEventListener("hide.bs.modal",(ev:Event) => {
         const tagsDiv = document.getElementById("image-modal-tags") as HTMLDivElement;
@@ -177,6 +161,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    document.getElementById("addToAlbum-modal")?.addEventListener("show.bs.modal",async (event) => {
+        console.log("Added to Album: ", event);
+        try{
+            const res = await fetch("http://localhost:8888/albums", {
+                method: "GET",
+                mode: "cors",
+                headers:
+                    {
+                        "Content-Type": "application/json"
+                    },
+                credentials: "include",
+            });
+            const data = await res.json();
+            if(res.status == 200){
+                const albumData = data.data as Array<AlbumData>;
+                const container = document.getElementById("addToAlbum-modal-body") as HTMLDivElement;
+                for(let i = 0; i < albumData.length; i++){
+                    const blankElement = document.getElementById("addToAlbum-modal-blankAlbumElement") as HTMLDivElement;
+                    let newElement = blankElement.cloneNode(true) as HTMLDivElement;
+                    newElement.id = albumData[i].album_id.toString();
+                    newElement.children[0].id = newElement.children[0].id + "-" +newElement.id;
+                    //TOD: add EventListener if checkbox is checked
+                    (newElement.children[1] as HTMLLabelElement).htmlFor = (newElement.children[1] as HTMLLabelElement).htmlFor + "-" +newElement.id;
+                    (newElement.children[2] as HTMLParagraphElement).innerText = albumData[i].title;
+                    (newElement.children[3] as HTMLParagraphElement).innerText = albumData[i].date.toString();
+                    newElement.classList.remove("d-none");
+                    (newElement.children[0]).addEventListener("change",(ev)=>{
+                        if((ev.target as HTMLInputElement).checked){
+                            addToSelectedAlbums(ev);
+                        }else{
+                            removeFromSelectedAlbums(ev);
+                        }
+                    })
+                    container.appendChild(newElement);
+                }
+            }else if(res.status == 401){
+                window.location.href = "/index.html";
+            }else{
+                console.error("failed to fetch Albums!");
+            }
+        }catch(error){
+            console.error("failed to fetch Albums!");
+        }
+    });
+
     document.getElementById("image-modal-download")?.addEventListener("click", (ev) =>{
         const image = (ev.target as HTMLButtonElement).parentElement?.parentElement?.children[1].children[0] as HTMLImageElement;
         const imageType = image.src.split(";")[0].split("/")[1];
@@ -188,21 +217,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("image-modal-delete")?.addEventListener("click", deleteImages);
 
-    document.getElementById("image-modal-edit")?.addEventListener("click", editButtonToSave);
+    document.getElementById("image-modal-edit")?.addEventListener("click",clickModalEdit);
 
-    document.getElementById("cancelSelect")?.addEventListener("click",(ev)=>{
-        for(const imageId of selected){
-            console.log(imageId);
-            (document.getElementById("imageButton-"+imageId) as HTMLInputElement).checked = false;
-            (document.getElementById("imageButton-"+imageId)?.nextElementSibling as HTMLLabelElement).classList.add("d-none");
-        }
-        selected = [];
-        document.getElementById("selectedDiv")?.classList.add("d-none");
-    })
+    function clickModalEdit(ev:Event){
+        editButtonToSave(ev);
+    }
 
     document.getElementById("deleteMultiple")?.addEventListener("click", async (ev) => {
         await deleteImages(ev,true);
-    })
+    });
+
+    document.getElementById("addToAlbum-modal-submit")?.addEventListener("click", async () => {
+        try {
+            for(let image = 0; image < selected.length; image++){
+                for(let album = 0; album < selectedAlbum.length; album++){
+                    const res = await fetch("http://localhost:8888/albums/"+selectedAlbum[album]+"/"+selected[image], {
+                        method: "PATCH",
+                        mode: "cors",
+                        headers:
+                            {
+                                "Content-Type": "application/json"
+                            },
+                        credentials: "include",
+                    });
+                    const data = await res.json();
+                    if(res.status != 201){
+                        console.error("Failed to added images to albums");
+                        return;
+                    }
+                }
+            }
+        }catch(error){
+            console.error("Failed to added images to albums")
+        }
+        for(const ID of selectedAlbum){
+            (document.getElementById("addToAlbum-modal-checkbox-"+ID) as HTMLInputElement).checked = false;
+        }
+        selectedAlbum = [];
+        (document.querySelector("#addToAlbum-modal-close") as HTMLButtonElement).click();
+    });
+
+
 
 });
 
@@ -260,94 +315,21 @@ async function deleteImages(ev:Event,multiple?:boolean){
     }
 }
 
-
-function editButtonToSave(ev:Event){
-    const button = document.getElementById("image-modal-edit") as HTMLButtonElement;
-    button.id = "image-modal-edit-save";
-    button.classList.remove("btn-secondary");
-    button.classList.add("btn-success");
-    button.innerText = "Save";
-    button.addEventListener("click",saveMetadata);
-    button.removeEventListener("click",editButtonToSave);
-
-    const title = document.getElementById("image-modal-title")?.children[1] as HTMLParagraphElement;
-    title.contentEditable = "plaintext-only";
-    const date = document.getElementById("image-modal-date")?.children[1] as HTMLParagraphElement;
-    date.contentEditable = "plaintext-only";
-    const tags = document.getElementById("image-modal-tags") as HTMLDivElement;
-    for(let i = 1; i < tags.children.length; i++){
-        let child = tags.children[i];
-        if(child !== undefined){
-            (child as HTMLParagraphElement).contentEditable = "plaintext-only";
-        }
-    }
-    const body = document.getElementById("image-modal-body") as HTMLDivElement;
-    let addTagForm = document.createElement("form");
-    let addTagInput = document.createElement("input");
-    let addTagButton = document.createElement("button");
-    let addTagLabel = document.createElement("label");
-    addTagButton.id = "image-modal-add-tag-button";
-    addTagInput.id = "image-modal-add-tag-input";
-    addTagForm.id = "image-modal-add-tag";
-    addTagForm.classList.add("form-floating");
-    addTagLabel.htmlFor = addTagInput.id;
-    addTagLabel.innerText = "Tag";
-    addTagButton.classList.add("btn","btn-success","mx-2");
-    addTagButton.innerText = "Add Tag";
-    addTagButton.type = "submit";
-    addTagInput.type = "text";
-    addTagInput.classList.add("form-control");
-    addTagInput.style.width = "20%";
-    addTagInput.style.display = "inline";
-    addTagInput.placeholder = "Tag";
-    addTagForm.append(addTagInput, addTagLabel, addTagButton);
-    body.append(addTagForm);
-    addTagForm.addEventListener("submit",addTag);
+function addToSelectedAlbums(ev : Event){
+    const splicedString = (ev.target as HTMLImageElement).id.split("-");
+    const albumId = splicedString[splicedString.length-1];
+    selectedAlbum.push(Number(albumId));
 }
 
-async function saveMetadata(ev:Event){
-    const title = (document.getElementById("image-modal-title")?.children[1] as HTMLParagraphElement).innerText;
-    const date = (document.getElementById("image-modal-date")?.children[1] as HTMLParagraphElement).innerText;
-    const tagsCollection = (document.getElementById("image-modal-tags") as HTMLDivElement).children;
-    const imageId = (document.getElementById("image-modal-image") as HTMLImageElement).alt.split("-")[1];
-    let tag = "";
-    for(let i = 1; i < tagsCollection.length; i++){
-        let text = (tagsCollection[i] as HTMLParagraphElement).innerText;
-        text = text.trim();
-        if(text.length > 0){
-            tag += ((tagsCollection[i] as HTMLParagraphElement).innerText + " ");
-        }
+function removeFromSelectedAlbums(ev:Event){
+    const splicedString = (ev.target as HTMLImageElement).id.split("-");
+    const albumId = splicedString[splicedString.length-1];
+    const indexOfId = selectedAlbum.indexOf(Number(albumId));
+    if(indexOfId > -1){
+        selectedAlbum.splice(indexOfId,1);
+    }else{
+        console.error("Item not found in Index!");
     }
-    tag = tag.trim()
-    try{
-        const res : Response = await fetch("http://localhost:8888/pictures/"+imageId, {
-            method: 'put',
-            mode: 'cors',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({"title": title, "date": date, "tags": tag })
-        });
-        const data = await res.json();
-        if(res.status == 200){
-            window.location.reload();
-        }
-    }catch(err){
-        console.error("Unable to save Metadata");
-    }
-}
-
-
-function addTag(ev:Event){
-    ev.preventDefault();
-    const tagToAdd = (document.getElementById("image-modal-add-tag-input") as HTMLInputElement).value;
-    const tagsDiv = document.getElementById("image-modal-tags") as HTMLDivElement;
-    const para = document.createElement("p");
-    para.contentEditable = "plaintext-only";
-    para.innerHTML = tagToAdd;
-    tagsDiv.appendChild(para);
-    (document.getElementById("image-modal-add-tag-input") as HTMLInputElement).value = "";
 }
 
 

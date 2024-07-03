@@ -64,15 +64,37 @@
             </li>
         </ul>
     </div>
-    <main>
-        <div id="imageContainer" class="d-flex flex-row flex-wrap">
+    <main id="main">
+        <div id="albumName" class="border w-100 d-none">
+            <h2 class="my-2 mx-3">
+                test
+            </h2>
+        </div>
+        <div id="albumContainer" class="d-flex flex-row flex-wrap">
+            <div id="BlankImageDiv" class="d-none p-3">
+                <div class="btn-group position-absolute" aria-label="Basic checkbox toggle button group">
+                    <input type="checkbox" class="btn-check" autocomplete="off" id="BlankImageCheckbox">
+                    <label class="btn btn-outline-primary position-absolute d-none" for="BlankImageCheckbox"></label>
+                </div>
+                <img class="z-n1" id="BlankImage" data-bs-toggle="modal" data-bs-target="#image-modal" alt="" src="">
+                <div class="d-none position-relative opacity-50 bg-secondary-subtle" style="top: -18%" id="BlankImageMetadata">
+                    <div></div>
+                    <div></div>
+                    <div class="d-none"></div>
+                </div>
+            </div>
             <div id="BlankAlbumDiv" class="d-none p-3">
                 <div class="btn-group position-absolute" aria-label="Basic checkbox toggle button group">
                     <input type="checkbox" class="btn-check" autocomplete="off" id="BlankAlbumCheckbox">
                     <label class="btn btn-outline-primary position-absolute d-none" for="BlankAlbumCheckbox"></label>
                 </div>
-                <img class="z-n1" id="BlankAlbumImage" data-bs-toggle="modal" data-bs-target="#album-modal" alt="" src="">
-                <div class="d-none position-relative opacity-50 bg-secondary-subtle" style="top: -16%" id="BlankAlbumMetadata">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-images" viewBox="0 0 16 16">
+                    <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
+                    <path d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1z"/>
+                </svg>
+                <div class="position-relative opacity-30 bg-secondary-subtle" style="top: -24%" id="BlankAlbumMainDiv">
+                </div>
+                <div class="d-none" id="BlankAlbumMetadata">
                     <div></div>
                     <div></div>
                     <div class="d-none"></div>
@@ -93,7 +115,7 @@
                 </ul>
             </div>
         </div>
-        <div class="d-none position-fixed border" id="selectedDiv" style="bottom: 0;height: 3rem;width: 100%">
+        <div class="d-none position-fixed border bg-dark-subtle" id="selectedDiv" style="bottom: 0;height: 3rem;width: 100%">
             <button type="button" id="deleteMultiple" class="btn btn-danger mx-2 my-1">Delete</button>
             <button type="button" id="cancelSelect" class="btn btn-secondary mx-2 my-1">Cancel</button>
         </div>
@@ -129,10 +151,11 @@
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Image</h4>
+                <h4 class="modal-title">Album</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
             </div>
             <div class="modal-body" id="album-modal-body">
+                <img id="album-modal-image" alt="" src="" class="d-none">
                 <div id="album-modal-title"><h3>Title</h3></div>
                 <div id="album-modal-date"><h3>Date</h3></div>
                 <div id="album-modal-tags"><h3>Tags</h3></div>
@@ -141,6 +164,27 @@
                 <button id="album-modal-delete" type="button" class="btn btn-danger">Delete</button>
                 <button id="album-modal-edit" type="button" class="btn btn-secondary">Edit</button>
                 <button id="album-modal-close" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" id="image-modal">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Image</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
+            </div>
+            <div class="modal-body" id="image-modal-body">
+                <img id="image-modal-image" alt="" src="">
+                <div id="image-modal-title"><h3>Title</h3></div>
+                <div id="image-modal-date"><h3>Date</h3></div>
+                <div id="image-modal-tags"><h3>Tags</h3></div>
+            </div>
+            <div class="modal-footer">
+                <button id="image-modal-download" type="button" class="btn btn-secondary">Download</button>
+                <button id="image-modal-close" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

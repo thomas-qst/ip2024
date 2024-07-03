@@ -64,7 +64,7 @@
             </li>
         </ul>
     </div>
-    <main>
+    <main id="main">
         <div id="imageContainer" class="d-flex flex-row flex-wrap">
             <div id="BlankImageDiv" class="d-none p-3">
                 <div class="btn-group position-absolute" aria-label="Basic checkbox toggle button group">
@@ -72,7 +72,7 @@
                     <label class="btn btn-outline-primary position-absolute d-none" for="BlankImageCheckbox"></label>
                 </div>
                 <img class="z-n1" id="BlankImage" data-bs-toggle="modal" data-bs-target="#image-modal" alt="" src="">
-                <div class="d-none position-relative opacity-50 bg-secondary-subtle" style="top: -16%" id="BlankImageMetadata">
+                <div class="d-none position-relative opacity-50 bg-secondary-subtle" style="top: -18%" id="BlankImageMetadata">
                     <div></div>
                     <div></div>
                     <div class="d-none"></div>
@@ -93,8 +93,8 @@
                 </ul>
             </div>
         </div>
-        <div class="d-none position-fixed border" id="selectedDiv" style="bottom: 0;height: 3rem;width: 100%">
-            <button type="button" id="addToAlbum" class="btn btn-primary mx-2 my-1">Add to Album</button>
+        <div class="d-none position-fixed border bg-dark-subtle" id="selectedDiv" style="bottom: 0;height: 3rem;width: 100%">
+            <button type="button" id="addToAlbum" class="btn btn-primary mx-2 my-1" data-bs-toggle="modal" data-bs-target="#addToAlbum-modal" >Add to Album</button>
             <button type="button" id="deleteMultiple" class="btn btn-danger mx-2 my-1">Delete</button>
             <button type="button" id="cancelSelect" class="btn btn-secondary mx-2 my-1">Cancel</button>
         </div>
@@ -131,7 +131,7 @@
             </div>
             <div class="modal-footer">
                 <button id="upload-modal-close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button id="upload-modal-submit" type="button" class="btn btn-primary">Speichern</button>
+                <button id="upload-modal-submit" type="button" class="btn btn-primary">Save</button>
             </div>
         </div>
     </div>
@@ -155,6 +155,29 @@
                 <button id="image-modal-edit" type="button" class="btn btn-secondary">Edit</button>
                 <button id="image-modal-download" type="button" class="btn btn-secondary">Download</button>
                 <button id="image-modal-close" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" id="addToAlbum-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Add Images to Album</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
+            </div>
+            <div class="modal-body" id="addToAlbum-modal-body">
+                <div id="addToAlbum-modal-blankAlbumElement" class="d-none border d-flex flex-row align-items-center justify-content-between">
+                    <input type="checkbox" class="btn-check" autocomplete="off" id="addToAlbum-modal-checkbox">
+                    <label class="btn btn-outline-primary my-3 mx-2" for="addToAlbum-modal-checkbox"></label>
+                    <p class="m-0"> Title </p>
+                    <p class="m-0"> Date </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="addToAlbum-modal-close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button id="addToAlbum-modal-submit" type="button" class="btn btn-primary">Save</button>
             </div>
         </div>
     </div>

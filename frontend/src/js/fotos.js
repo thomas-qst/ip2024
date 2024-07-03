@@ -8,8 +8,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+let selectedAlbum = [];
 document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
     yield getUsername();
     const userElement = document.getElementById("user");
     if (userElement != null) {
@@ -88,10 +89,9 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             return;
         }
         reader.onload = (event) => __awaiter(void 0, void 0, void 0, function* () {
-            var _r, _s;
+            var _s, _t;
             imageAsText = reader.result;
             try {
-                console.log(imageAsText);
                 const res = yield fetch("http://localhost:8888/pictures", {
                     method: "POST",
                     mode: "cors",
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                             });
                             const data = yield res.json();
                             if (res.ok) {
-                                (_r = document.getElementById("upload-modal-close")) === null || _r === void 0 ? void 0 : _r.click();
+                                (_s = document.getElementById("upload-modal-close")) === null || _s === void 0 ? void 0 : _s.click();
                                 window.location.reload();
                             }
                         }
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                         }
                     }
                     else {
-                        (_s = document.getElementById("upload-modal-close")) === null || _s === void 0 ? void 0 : _s.click();
+                        (_t = document.getElementById("upload-modal-close")) === null || _t === void 0 ? void 0 : _t.click();
                         window.location.reload();
                     }
                 }
@@ -137,23 +137,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         });
         reader.readAsDataURL(file[0]);
     }));
-    (_j = document.getElementById("image-modal")) === null || _j === void 0 ? void 0 : _j.addEventListener("show.bs.modal", (event) => {
-        const ev = event;
-        const imageDiv = ev.relatedTarget.parentElement;
-        const img = ev.relatedTarget;
-        const metadata = imageDiv.children[2];
-        const modalTags = document.getElementById("image-modal-tags");
-        let modalImage = document.getElementById("image-modal-image");
-        modalImage.src = img.src;
-        modalImage.alt = img.id;
-        let modalTitle = document.getElementById("image-modal-title");
-        modalTitle.append(document.createElement("p"));
-        modalTitle.children[1].textContent = metadata.children[0].innerHTML;
-        let modalDate = document.getElementById("image-modal-date");
-        modalDate.append(document.createElement("p"));
-        modalDate.children[1].textContent = metadata.children[1].innerHTML;
-        modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
-    });
+    (_j = document.getElementById("image-modal")) === null || _j === void 0 ? void 0 : _j.addEventListener("show.bs.modal", insertImageDataToModal);
     (_k = document.getElementById("image-modal")) === null || _k === void 0 ? void 0 : _k.addEventListener("hide.bs.modal", (ev) => {
         var _a;
         const tagsDiv = document.getElementById("image-modal-tags");
@@ -173,7 +157,54 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             button.addEventListener("click", editButtonToSave);
         }
     });
-    (_l = document.getElementById("image-modal-download")) === null || _l === void 0 ? void 0 : _l.addEventListener("click", (ev) => {
+    (_l = document.getElementById("addToAlbum-modal")) === null || _l === void 0 ? void 0 : _l.addEventListener("show.bs.modal", (event) => __awaiter(void 0, void 0, void 0, function* () {
+        console.log("Added to Album: ", event);
+        try {
+            const res = yield fetch("http://localhost:8888/albums", {
+                method: "GET",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include",
+            });
+            const data = yield res.json();
+            if (res.status == 200) {
+                const albumData = data.data;
+                const container = document.getElementById("addToAlbum-modal-body");
+                for (let i = 0; i < albumData.length; i++) {
+                    const blankElement = document.getElementById("addToAlbum-modal-blankAlbumElement");
+                    let newElement = blankElement.cloneNode(true);
+                    newElement.id = albumData[i].album_id.toString();
+                    newElement.children[0].id = newElement.children[0].id + "-" + newElement.id;
+                    //TOD: add EventListener if checkbox is checked
+                    newElement.children[1].htmlFor = newElement.children[1].htmlFor + "-" + newElement.id;
+                    newElement.children[2].innerText = albumData[i].title;
+                    newElement.children[3].innerText = albumData[i].date.toString();
+                    newElement.classList.remove("d-none");
+                    (newElement.children[0]).addEventListener("change", (ev) => {
+                        if (ev.target.checked) {
+                            addToSelectedAlbums(ev);
+                        }
+                        else {
+                            removeFromSelectedAlbums(ev);
+                        }
+                    });
+                    container.appendChild(newElement);
+                }
+            }
+            else if (res.status == 401) {
+                window.location.href = "/index.html";
+            }
+            else {
+                console.error("failed to fetch Albums!");
+            }
+        }
+        catch (error) {
+            console.error("failed to fetch Albums!");
+        }
+    }));
+    (_m = document.getElementById("image-modal-download")) === null || _m === void 0 ? void 0 : _m.addEventListener("click", (ev) => {
         var _a, _b;
         const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
         const imageType = image.src.split(";")[0].split("/")[1];
@@ -182,20 +213,42 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         a.download = "Image." + imageType;
         a.click();
     });
-    (_m = document.getElementById("image-modal-delete")) === null || _m === void 0 ? void 0 : _m.addEventListener("click", deleteImages);
-    (_o = document.getElementById("image-modal-edit")) === null || _o === void 0 ? void 0 : _o.addEventListener("click", editButtonToSave);
-    (_p = document.getElementById("cancelSelect")) === null || _p === void 0 ? void 0 : _p.addEventListener("click", (ev) => {
-        var _a, _b;
-        for (const imageId of selected) {
-            console.log(imageId);
-            document.getElementById("imageButton-" + imageId).checked = false;
-            ((_a = document.getElementById("imageButton-" + imageId)) === null || _a === void 0 ? void 0 : _a.nextElementSibling).classList.add("d-none");
-        }
-        selected = [];
-        (_b = document.getElementById("selectedDiv")) === null || _b === void 0 ? void 0 : _b.classList.add("d-none");
-    });
+    (_o = document.getElementById("image-modal-delete")) === null || _o === void 0 ? void 0 : _o.addEventListener("click", deleteImages);
+    (_p = document.getElementById("image-modal-edit")) === null || _p === void 0 ? void 0 : _p.addEventListener("click", clickModalEdit);
+    function clickModalEdit(ev) {
+        editButtonToSave(ev);
+    }
     (_q = document.getElementById("deleteMultiple")) === null || _q === void 0 ? void 0 : _q.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
         yield deleteImages(ev, true);
+    }));
+    (_r = document.getElementById("addToAlbum-modal-submit")) === null || _r === void 0 ? void 0 : _r.addEventListener("click", () => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            for (let image = 0; image < selected.length; image++) {
+                for (let album = 0; album < selectedAlbum.length; album++) {
+                    const res = yield fetch("http://localhost:8888/albums/" + selectedAlbum[album] + "/" + selected[image], {
+                        method: "PATCH",
+                        mode: "cors",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "include",
+                    });
+                    const data = yield res.json();
+                    if (res.status != 201) {
+                        console.error("Failed to added images to albums");
+                        return;
+                    }
+                }
+            }
+        }
+        catch (error) {
+            console.error("Failed to added images to albums");
+        }
+        for (const ID of selectedAlbum) {
+            document.getElementById("addToAlbum-modal-checkbox-" + ID).checked = false;
+        }
+        selectedAlbum = [];
+        document.querySelector("#addToAlbum-modal-close").click();
     }));
 }));
 /**
@@ -256,92 +309,19 @@ function deleteImages(ev, multiple) {
         }
     });
 }
-function editButtonToSave(ev) {
-    var _a, _b;
-    const button = document.getElementById("image-modal-edit");
-    button.id = "image-modal-edit-save";
-    button.classList.remove("btn-secondary");
-    button.classList.add("btn-success");
-    button.innerText = "Save";
-    button.addEventListener("click", saveMetadata);
-    button.removeEventListener("click", editButtonToSave);
-    const title = (_a = document.getElementById("image-modal-title")) === null || _a === void 0 ? void 0 : _a.children[1];
-    title.contentEditable = "plaintext-only";
-    const date = (_b = document.getElementById("image-modal-date")) === null || _b === void 0 ? void 0 : _b.children[1];
-    date.contentEditable = "plaintext-only";
-    const tags = document.getElementById("image-modal-tags");
-    for (let i = 1; i < tags.children.length; i++) {
-        let child = tags.children[i];
-        if (child !== undefined) {
-            child.contentEditable = "plaintext-only";
-        }
+function addToSelectedAlbums(ev) {
+    const splicedString = ev.target.id.split("-");
+    const albumId = splicedString[splicedString.length - 1];
+    selectedAlbum.push(Number(albumId));
+}
+function removeFromSelectedAlbums(ev) {
+    const splicedString = ev.target.id.split("-");
+    const albumId = splicedString[splicedString.length - 1];
+    const indexOfId = selectedAlbum.indexOf(Number(albumId));
+    if (indexOfId > -1) {
+        selectedAlbum.splice(indexOfId, 1);
     }
-    const body = document.getElementById("image-modal-body");
-    let addTagForm = document.createElement("form");
-    let addTagInput = document.createElement("input");
-    let addTagButton = document.createElement("button");
-    let addTagLabel = document.createElement("label");
-    addTagButton.id = "image-modal-add-tag-button";
-    addTagInput.id = "image-modal-add-tag-input";
-    addTagForm.id = "image-modal-add-tag";
-    addTagForm.classList.add("form-floating");
-    addTagLabel.htmlFor = addTagInput.id;
-    addTagLabel.innerText = "Tag";
-    addTagButton.classList.add("btn", "btn-success", "mx-2");
-    addTagButton.innerText = "Add Tag";
-    addTagButton.type = "submit";
-    addTagInput.type = "text";
-    addTagInput.classList.add("form-control");
-    addTagInput.style.width = "20%";
-    addTagInput.style.display = "inline";
-    addTagInput.placeholder = "Tag";
-    addTagForm.append(addTagInput, addTagLabel, addTagButton);
-    body.append(addTagForm);
-    addTagForm.addEventListener("submit", addTag);
-}
-function saveMetadata(ev) {
-    return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b;
-        const title = ((_a = document.getElementById("image-modal-title")) === null || _a === void 0 ? void 0 : _a.children[1]).innerText;
-        const date = ((_b = document.getElementById("image-modal-date")) === null || _b === void 0 ? void 0 : _b.children[1]).innerText;
-        const tagsCollection = document.getElementById("image-modal-tags").children;
-        const imageId = document.getElementById("image-modal-image").alt.split("-")[1];
-        let tag = "";
-        for (let i = 1; i < tagsCollection.length; i++) {
-            let text = tagsCollection[i].innerText;
-            text = text.trim();
-            if (text.length > 0) {
-                tag += (tagsCollection[i].innerText + " ");
-            }
-        }
-        tag = tag.trim();
-        try {
-            const res = yield fetch("http://localhost:8888/pictures/" + imageId, {
-                method: 'put',
-                mode: 'cors',
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include",
-                body: JSON.stringify({ "title": title, "date": date, "tags": tag })
-            });
-            const data = yield res.json();
-            if (res.status == 200) {
-                window.location.reload();
-            }
-        }
-        catch (err) {
-            console.error("Unable to save Metadata");
-        }
-    });
-}
-function addTag(ev) {
-    ev.preventDefault();
-    const tagToAdd = document.getElementById("image-modal-add-tag-input").value;
-    const tagsDiv = document.getElementById("image-modal-tags");
-    const para = document.createElement("p");
-    para.contentEditable = "plaintext-only";
-    para.innerHTML = tagToAdd;
-    tagsDiv.appendChild(para);
-    document.getElementById("image-modal-add-tag-input").value = "";
+    else {
+        console.error("Item not found in Index!");
+    }
 }

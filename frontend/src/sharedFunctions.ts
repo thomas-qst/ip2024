@@ -1,5 +1,7 @@
 let username : string;
 let selected : Array<number> = [];
+const max_ElementDimension = 250;
+
 /**
  * Interface to use the relatedTarget of the BoostrapModalEvent
  */
@@ -76,15 +78,27 @@ interface ImageData {
 }
 
 /**
+ * Interface that describes the return of the album data from the backend
+ */
+interface AlbumData {
+    album_id : number;
+    date: Date;
+    tags: Array<string>;
+    title: string;
+}
+
+/**
  * removes the d-none class of the label and the title.
  *
  * @param ev
  */
-function imageDivHover(ev : Event){
+function imageDivHover(ev : Event,album?:boolean){
     let target = ev.target as HTMLDivElement;
     let label = target.children[0].children[1] as HTMLLabelElement;
     let title = target.children[2] as HTMLDivElement;
-    title.classList.remove("d-none");
+    if(album === undefined || !album){
+        title.classList.remove("d-none");
+    }
     label.classList.remove("d-none");
 }
 
@@ -93,14 +107,104 @@ function imageDivHover(ev : Event){
  *
  * @param ev
  */
-function imageDivLeave(ev : Event){
+function imageDivLeave(ev : Event,album?:boolean){
     let target = ev.target as HTMLDivElement;
     let label = target.children[0].children[1] as HTMLLabelElement;
     let input = target.children[0].children[0] as HTMLInputElement;
     let title = target.children[2] as HTMLDivElement;
-    title.classList.add("d-none");
+    if(album === undefined || !album){
+        title.classList.add("d-none");
+    }
     if(!input.checked){
         label.classList.add("d-none");
+    }
+}
+
+async function fetchAlbums(){
+    try{
+        const res : Response = await fetch("http://localhost:8888/albums", {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
+        });
+        const data = await res.json();
+        if(res.status == 401){
+            window.location.href = "/index.html";
+        }else if(res.status == 200){
+            let array = data.data as Array<AlbumData>;
+            const container = document.getElementById("albumContainer") as HTMLDivElement;
+            for(let i = 0; i < array.length; i++){
+                let divCopy = document.getElementById("BlankAlbumDiv")?.cloneNode(true) as HTMLDivElement;
+                divCopy.id = "albumDiv-"+array[i].album_id;
+                divCopy.setAttribute("style","height: "+(max_ElementDimension+50)+"px; width:"+(max_ElementDimension+50)+"px;");
+                container.appendChild(divCopy);
+                divCopy = document.getElementById("albumDiv-"+array[i].album_id) as HTMLDivElement;
+                divCopy.addEventListener("mouseenter",(ev) => {
+                    imageDivHover(ev,true);
+                });
+                divCopy.addEventListener("mouseleave",(ev) =>{
+                    imageDivLeave(ev,true);
+                });
+                let svg = divCopy.children[1] as SVGElement;
+                svg.id = "album-"+array[i].album_id;
+                svg.addEventListener("click",(ev) => {
+                    fetchImages(ev,array[i].album_id.toString());
+                })
+                let mainDiv = divCopy.children[2] as HTMLImageElement;
+                mainDiv.id = "mainDiv-"+array[i].album_id;
+                let buttonDiv = divCopy.children[0] as HTMLDivElement;
+                let button = buttonDiv.children[0] as HTMLInputElement;
+                let buttonLable = buttonDiv.children[1] as HTMLLabelElement;
+                button.id = "checkboxButton-"+array[i].album_id;
+                button.addEventListener("change",(ev)=>{
+                    if(button.checked){
+                        addToSelected(ev);
+                    }else{
+                        removeFromSelected(ev);
+                    }
+                })
+                buttonLable.htmlFor = button.id;
+                let metadataDiv = divCopy.children[3] as HTMLDivElement;
+                metadataDiv.id = "albumMetadata-"+array[i].album_id;
+                const title = array[i].title;
+                const date = array[i].date;
+                (metadataDiv.children[1] as HTMLDivElement).innerText = date.toString();
+                (metadataDiv.children[0] as HTMLDivElement).innerText = title;
+                let metadataTags = metadataDiv.children[2] as HTMLDivElement;
+                array[i].tags.forEach(tag => {
+                    let p = document.createElement("p");
+                    p.innerText = tag;
+                    metadataTags.append(p);
+                })
+
+                let titlep = document.createElement("p");
+                titlep.innerText = title;
+                let datep = document.createElement("p");
+                let editSVG = document.createElementNS("http://www.w3.org/2000/svg","svg");
+                editSVG.setAttribute("width","32");
+                editSVG.setAttribute("height","32");
+                editSVG.setAttribute("fill","currentColor");
+                editSVG.classList.add("bi","bi-pencil");
+                editSVG.setAttribute("viewBox","0 0 16 16");
+                editSVG.setAttribute("data-bs-toggle","modal");
+                editSVG.setAttribute("data-bs-target","#album-modal");
+                editSVG.classList.add("position-relative");
+                editSVG.setAttribute("style","top: -47%; left: 80%;");
+                let editPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+                editPath.setAttribute("d","M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325");
+                editSVG.append(editPath);
+                datep.innerText = date.toString();
+                mainDiv.append(titlep,datep);
+                divCopy.append(editSVG)
+                resizeImage((divCopy.children[1] as HTMLElement),false);
+                divCopy.classList.remove("d-none");
+            }
+        }
+    }catch(err){
+        console.error('Failed to fetch album', err);
     }
 }
 
@@ -108,16 +212,29 @@ function imageDivLeave(ev : Event){
  * fetches the images from the backend and loads them on the page by copying the BlankDiv and adjusting the ids etc.
  * If the album param is set it only fetches the images contained on the album.
  *
+ * @param {Event} [ev]
  * @param {String} [album]
  * @return Promise<void>
  * @returns empty promise
  */
-async function fetchImages(album? : string){
+async function fetchImages(ev?:Event, album? : string){
     //TODO: add function fetching by album
-    if(typeof album !== 'undefined'){
-    }else{
+    let res : Response;
+    let data;
+    let container;
+    let isAlbum = false;
+    if(typeof album !== 'undefined' && typeof ev !== 'undefined'){
+        isAlbum = true;
+        const albumContainer = document.getElementById("albumContainer") as HTMLDivElement;
+        const pageElements = albumContainer.children;
+        while(pageElements.length > 2){
+            pageElements[2].remove();
+        }
+        const albumNameDiv = document.getElementById("albumName") as HTMLDivElement;
+        albumNameDiv.classList.remove("d-none");
+        (albumNameDiv.children[0] as HTMLHeadElement).innerText = ((ev.target as HTMLElement).nextElementSibling?.children[0] as HTMLParagraphElement).innerText;
         try{
-            const res : Response = await fetch("http://localhost:8888/pictures", {
+            res = await fetch(`http://localhost:8888/albums/${album}`, {
                 method: 'GET',
                 mode: 'cors',
                 headers: {
@@ -125,82 +242,113 @@ async function fetchImages(album? : string){
                 },
                 credentials: "include"
             });
-            const data = await res.json();
-            if(res.status == 401){
-                window.location.href = '/index.html';
-            }else if(res.status == 200){
-                let array = data.data as Array<ImageData>;
-                const container = document.getElementById("imageContainer") as HTMLDivElement;
-                for(let i = 0; i < array.length; i++){
-                    let divCopy = document.getElementById("BlankImageDiv")?.cloneNode(true) as HTMLDivElement;
-                    divCopy.id = "imageDiv-"+array[i].photo_id;
-                    container.appendChild(divCopy);
-                    divCopy = document.getElementById("imageDiv-"+array[i].photo_id) as HTMLDivElement;
-                    divCopy.addEventListener("mouseenter",imageDivHover);
-                    divCopy.addEventListener("mouseleave",imageDivLeave);
-                    let imageCopy = divCopy.children[1] as HTMLImageElement;
-                    imageCopy.id = "image-"+array[i].photo_id;
-                    imageCopy.src = array[i].photo;
-                    let buttonDiv = divCopy.children[0] as HTMLDivElement;
-                    let button = buttonDiv.children[0] as HTMLInputElement;
-                    let buttonLable = buttonDiv.children[1] as HTMLLabelElement;
-                    button.id = "imageButton-"+array[i].photo_id;
-                    button.addEventListener("change",(ev)=>{
-                        if(button.checked){
-                            addToSelected(ev);
-                        }else{
-                            removeFromSelected(ev);
-                        }
-                    })
-                    buttonLable.htmlFor = button.id;
-                    let metadataDiv = divCopy.children[2] as HTMLDivElement;
-                    metadataDiv.id = "imageMetadata-"+array[i].photo_id;
-                    (metadataDiv.children[1] as HTMLDivElement).innerText = array[i].date.toString();
-                    (metadataDiv.children[0] as HTMLDivElement).innerText = array[i].title.toString();
-                    let metadataTags = metadataDiv.children[2] as HTMLDivElement;
-                    array[i].tags.forEach(tag => {
-                        let p = document.createElement("p");
-                        p.innerText = tag;
-                        metadataTags.append(p);
-                    })
-                    divCopy.classList.remove("d-none");
-                    resizeImage(imageCopy);
-                }
-                //(document.getElementById("testImage") as HTMLImageElement).src = image;
-                //resizeImage(document.getElementById("testImage") as HTMLImageElement);
-            }
+            data = await res.json();
+        }catch (error){
+            console.error('Failed to fetch images', error);
+            return
+        }
+        container = document.getElementById("albumContainer") as HTMLDivElement;
+    }else{
+        try{
+            res = await fetch("http://localhost:8888/pictures", {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            data = await res.json();
         }
         catch (error){
             console.error('Failed to fetch images', error);
+            return;
+        }
+        container = document.getElementById("imageContainer") as HTMLDivElement;
+    }
+    if(res.status === 401){
+        window.location.href = '/index.html';
+    }else if(res.status == 200){
+        let array = data.data as Array<ImageData>;
+        for(let i = 0; i < array.length; i++){
+            let divCopy = document.getElementById("BlankImageDiv")?.cloneNode(true) as HTMLDivElement;
+            divCopy.id = "imageDiv-"+array[i].photo_id;
+            container.appendChild(divCopy);
+            divCopy = document.getElementById("imageDiv-"+array[i].photo_id) as HTMLDivElement;
+            divCopy.addEventListener("mouseenter",imageDivHover);
+            divCopy.addEventListener("mouseleave",imageDivLeave);
+            divCopy.setAttribute("style","height: "+(max_ElementDimension+50)+"px; width:"+(max_ElementDimension+50)+"px;");
+            let imageCopy = divCopy.children[1] as HTMLImageElement;
+            imageCopy.id = "image-"+array[i].photo_id;
+            imageCopy.src = array[i].photo;
+            let buttonDiv = divCopy.children[0] as HTMLDivElement;
+            let button = buttonDiv.children[0] as HTMLInputElement;
+            let buttonLable = buttonDiv.children[1] as HTMLLabelElement;
+            button.id = "checkboxButton-"+array[i].photo_id;
+            button.addEventListener("change",(ev)=>{
+                if(button.checked){
+                    addToSelected(ev);
+                }else{
+                    removeFromSelected(ev);
+                }
+            })
+            buttonLable.htmlFor = button.id;
+            if(isAlbum){
+                buttonDiv.classList.add("d-none");
+            }
+            let metadataDiv = divCopy.children[2] as HTMLDivElement;
+            metadataDiv.id = "imageMetadata-"+array[i].photo_id;
+            (metadataDiv.children[1] as HTMLDivElement).innerText = array[i].date.toString();
+            (metadataDiv.children[0] as HTMLDivElement).innerText = array[i].title.toString();
+            let metadataTags = metadataDiv.children[2] as HTMLDivElement;
+            array[i].tags.forEach(tag => {
+                let p = document.createElement("p");
+                p.innerText = tag;
+                metadataTags.append(p);
+            })
+            divCopy.classList.remove("d-none");
+            resizeImage(imageCopy,true);
         }
     }
 }
 
 /**
- * Resizes the given ImageElement to the max_dimension specified in the function.
+ * Resizes the given ImageElement to the max_ElementDimension specified in the function.
  *
  * @param imageElement
+ * @param image
  */
-function resizeImage(imageElement : HTMLImageElement){
-    const max_dimension = 250;
-    let height = imageElement.height;
-    let width = imageElement.width;
-    if(height > width){
-        imageElement.style.height = `${max_dimension}px`;
+function resizeImage(imageElement : HTMLElement,image? : boolean){
+    if(image){
+        let height = (imageElement as HTMLImageElement).height;
+        let width = (imageElement as HTMLImageElement).width;
+        if(height > width){
+            imageElement.style.height = `${max_ElementDimension}px`;
+        }else{
+            imageElement.style.width = `${max_ElementDimension}px`;
+        }
     }else{
-        imageElement.style.width = `${max_dimension}px`;
+        imageElement.style.width = `${max_ElementDimension}px`;
+        imageElement.style.height = `${max_ElementDimension}px`;
     }
+
 }
 
-
+/**
+ * adds the selected Element to the selected array.
+ * @param ev
+ */
 function addToSelected(ev : Event){
     const selectedDiv = document.getElementById("selectedDiv") as HTMLDivElement;
     selectedDiv.classList.remove("d-none");
     const imageId = (ev.target as HTMLImageElement).id.split("-")[1];
     selected.push(Number(imageId));
-    console.log(selected);
 }
 
+/**
+ * removes the Element from the selected array.
+ * @param ev
+ */
 function removeFromSelected(ev:Event){
     const imageId = (ev.target as HTMLImageElement).id.split("-")[1];
     const indexOfId = selected.indexOf(Number(imageId));
@@ -212,4 +360,184 @@ function removeFromSelected(ev:Event){
     if(selected.length == 0){
         document.getElementById("selectedDiv")?.classList.add("d-none");
     }
+}
+
+
+document.addEventListener("DOMContentLoaded",() =>{
+    document.getElementById("cancelSelect")?.addEventListener("click",(ev)=>{
+        for(const ID of selected){
+            console.log(ID);
+            (document.getElementById("checkboxButton-"+ID) as HTMLInputElement).checked = false;
+            (document.getElementById("checkboxButton-"+ID)?.nextElementSibling as HTMLLabelElement).classList.add("d-none");
+        }
+        selected = [];
+        document.getElementById("selectedDiv")?.classList.add("d-none");
+    });
+})
+
+
+function clickModalEditImage(ev:Event){
+    editButtonToSave(ev);
+}
+
+function clickModalEditAlbum(ev:Event){
+    editButtonToSave(ev,true);
+}
+
+function clickModalSaveAlbum(ev:Event){
+    saveMetadata(ev,true);
+}
+
+function clickModalSaveImage(ev:Event){
+    saveMetadata(ev);
+}
+
+/**
+ * Changes the edit button of the image modal to Save and changes elements to contentEditable plaintext-only.
+ * Also add extra input to add tag.
+ *
+ * @param ev
+ * @param {boolean}[album]
+ */
+function editButtonToSave(ev:Event,album? : boolean){
+    let type : string = "image";
+    if(album){
+        type = "album";
+    }
+    const button = ev.target as HTMLButtonElement;
+    button.id = type+"-modal-edit-save";
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-success");
+    button.innerText = "Save";
+    if(album){
+        button.addEventListener("click",clickModalSaveAlbum);
+        button.removeEventListener("click",clickModalEditAlbum);
+    }else{
+        button.addEventListener("click",clickModalSaveImage);
+        button.removeEventListener("click",clickModalEditImage);
+    }
+    const body = button.parentElement?.previousElementSibling as HTMLDivElement;
+    console.log(body);
+    console.log(button);
+    console.log(button.parentElement);
+    console.log(button.parentElement?.previousElementSibling);
+    const title = body.children[1].children[1] as HTMLParagraphElement;
+    title.contentEditable = "plaintext-only";
+    const date = body.children[2].children[1] as HTMLParagraphElement;
+    date.contentEditable = "plaintext-only";
+    const tags = body.children[3] as HTMLDivElement;
+    for(let i = 1; i < tags.children.length; i++){
+        let child = tags.children[i];
+        if(child !== undefined){
+            (child as HTMLParagraphElement).contentEditable = "plaintext-only";
+        }
+    }
+    let addTagForm = document.createElement("form");
+    let addTagInput = document.createElement("input");
+    let addTagButton = document.createElement("button");
+    let addTagLabel = document.createElement("label");
+    addTagButton.id = type+"-modal-add-tag-button";
+    addTagInput.id = type+"-modal-add-tag-input";
+    addTagForm.id = type+"-modal-add-tag";
+    addTagForm.classList.add("form-floating");
+    addTagLabel.htmlFor = addTagInput.id;
+    addTagLabel.innerText = "Tag";
+    addTagButton.classList.add("btn","btn-success","mx-2");
+    addTagButton.innerText = "Add Tag";
+    addTagButton.type = "submit";
+    addTagInput.type = "text";
+    addTagInput.classList.add("form-control");
+    addTagInput.style.width = "20%";
+    addTagInput.style.display = "inline";
+    addTagInput.placeholder = "Tag";
+    addTagForm.append(addTagInput, addTagLabel, addTagButton);
+    body.append(addTagForm);
+    if(album){
+        addTagForm.addEventListener("submit",addTagAlbum);
+
+    }else{
+        addTagForm.addEventListener("submit",addTagImage);
+    }
+}
+
+function addTagImage(ev:Event){
+    addTag(ev);
+}
+
+function addTagAlbum(ev:Event){
+    addTag(ev,true);
+}
+
+function addTag(ev:Event,album?:boolean){
+    let type = "image";
+    if(album){
+        type = "album";
+    }
+    ev.preventDefault();
+    const tagToAdd = (document.getElementById(type+"-modal-add-tag-input") as HTMLInputElement).value;
+    const tagsDiv = document.getElementById(type+"-modal-tags") as HTMLDivElement;
+    const para = document.createElement("p");
+    para.contentEditable = "plaintext-only";
+    para.innerHTML = tagToAdd;
+    tagsDiv.appendChild(para);
+    (document.getElementById(type+"-modal-add-tag-input") as HTMLInputElement).value = "";
+}
+
+
+async function saveMetadata(ev:Event,album?:boolean){
+    let type = "image";
+    let url = "http://localhost:8888/pictures/";
+    if(album){
+        type = "album";
+        url = "http://localhost:8888/albums/"
+    }
+    const title = (document.getElementById(type+"-modal-title")?.children[1] as HTMLParagraphElement).innerText;
+    const date = (document.getElementById(type+"-modal-date")?.children[1] as HTMLParagraphElement).innerText;
+    const tagsCollection = (document.getElementById(type+"-modal-tags") as HTMLDivElement).children;
+    const id = (document.getElementById(type+"-modal-image") as HTMLImageElement).alt.split("-")[1];
+    let tag = "";
+    for(let i = 1; i < tagsCollection.length; i++){
+        let text = (tagsCollection[i] as HTMLParagraphElement).innerText;
+        text = text.trim();
+        if(text.length > 0){
+            tag += ((tagsCollection[i] as HTMLParagraphElement).innerText + " ");
+        }
+    }
+    tag = tag.trim()
+    try{
+        const res : Response = await fetch(url+id, {
+            method: 'put',
+            mode: 'cors',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({"title": title, "date": date, "tags": tag })
+        });
+        const data = await res.json();
+        if(res.status == 200){
+            window.location.reload();
+        }
+    }catch(err){
+        console.error("Unable to save Metadata");
+    }
+}
+
+
+function insertImageDataToModal(event:Event){
+    const ev = event as BootstrapModalEvent;
+    const imageDiv = ev.relatedTarget.parentElement as HTMLDivElement;
+    const img = ev.relatedTarget as HTMLImageElement;
+    const metadata = imageDiv.children[2];
+    const modalTags = document.getElementById("image-modal-tags") as HTMLParagraphElement;
+    let modalImage = document.getElementById("image-modal-image") as HTMLImageElement;
+    modalImage.src = img.src;
+    modalImage.alt = img.id;
+    let modalTitle = document.getElementById("image-modal-title") as HTMLDivElement;
+    modalTitle.append(document.createElement("p"));
+    (modalTitle.children[1] as HTMLParagraphElement).textContent = metadata.children[0].innerHTML;
+    let modalDate = document.getElementById("image-modal-date") as HTMLParagraphElement;
+    modalDate.append(document.createElement("p"));
+    (modalDate.children[1] as HTMLParagraphElement).textContent = metadata.children[1].innerHTML;
+    modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
 }
