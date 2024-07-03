@@ -91,6 +91,7 @@ interface AlbumData {
  * removes the d-none class of the label and the title.
  *
  * @param ev
+ * @param {boolean}[album]
  */
 function imageDivHover(ev : Event,album?:boolean){
     let target = ev.target as HTMLDivElement;
@@ -106,6 +107,7 @@ function imageDivHover(ev : Event,album?:boolean){
  * Sets the display of the title div to none and the label if the checkbox is unchecked
  *
  * @param ev
+ * @param {boolean}[album]
  */
 function imageDivLeave(ev : Event,album?:boolean){
     let target = ev.target as HTMLDivElement;
@@ -218,7 +220,6 @@ async function fetchAlbums(){
  * @returns empty promise
  */
 async function fetchImages(ev?:Event, album? : string){
-    //TODO: add function fetching by album
     let res : Response;
     let data;
     let container;

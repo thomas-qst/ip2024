@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ev = event as BootstrapModalEvent;
         const imageDiv = ev.relatedTarget.parentElement as HTMLDivElement;
         const metadata = imageDiv.children[3];
-        const img = ev.relatedTarget as HTMLElement;
+        const img = ((ev.relatedTarget as HTMLElement).previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLElement);
         console.log(img);
         const modalTags = document.getElementById("album-modal-tags") as HTMLParagraphElement;
         let modalImage = document.getElementById("album-modal-image") as HTMLImageElement;

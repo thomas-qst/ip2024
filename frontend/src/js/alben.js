@@ -74,10 +74,11 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         yield deleteAlbum(ev, true);
     }));
     (_d = document.getElementById("album-modal")) === null || _d === void 0 ? void 0 : _d.addEventListener("show.bs.modal", (event) => {
+        var _a, _b;
         const ev = event;
         const imageDiv = ev.relatedTarget.parentElement;
         const metadata = imageDiv.children[3];
-        const img = ev.relatedTarget;
+        const img = (_b = (_a = ev.relatedTarget.previousElementSibling) === null || _a === void 0 ? void 0 : _a.previousElementSibling) === null || _b === void 0 ? void 0 : _b.previousElementSibling;
         console.log(img);
         const modalTags = document.getElementById("album-modal-tags");
         let modalImage = document.getElementById("album-modal-image");

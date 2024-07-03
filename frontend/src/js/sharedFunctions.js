@@ -76,6 +76,7 @@ function logout() {
  * removes the d-none class of the label and the title.
  *
  * @param ev
+ * @param {boolean}[album]
  */
 function imageDivHover(ev, album) {
     let target = ev.target;
@@ -90,6 +91,7 @@ function imageDivHover(ev, album) {
  * Sets the display of the title div to none and the label if the checkbox is unchecked
  *
  * @param ev
+ * @param {boolean}[album]
  */
 function imageDivLeave(ev, album) {
     let target = ev.target;
@@ -207,7 +209,6 @@ function fetchAlbums() {
 function fetchImages(ev, album) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
-        //TODO: add function fetching by album
         let res;
         let data;
         let container;
