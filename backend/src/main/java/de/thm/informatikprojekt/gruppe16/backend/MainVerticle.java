@@ -61,7 +61,6 @@ public class MainVerticle extends AbstractVerticle {
     router.get("/pictures").handler(this::getPicturesByUsername);
     router.get("/albums").handler(this::getAlbumsByUsername);
     router.get("/users").handler(this::getUsers);
-    router.get("/users/:username").handler(this::getUserbyUsername);
     router.get("/login/username").handler(this::getUsernameFromSession);
     router.get("/albums/:album_id").handler(this::getPicturesFromAlbum);
 

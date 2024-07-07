@@ -65,10 +65,13 @@
         </ul>
     </div>
     <main id="main">
-        <div id="albumName" class="border w-100 d-none">
-            <h2 class="my-2 mx-3">
-                test
-            </h2>
+        <div id="albumName" class="border w-100 d-none d-flex flex-row">
+            <button id="album-back-button" class="btn d-inline">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-caret-left" viewBox="0 0 16 16">
+                    <path d="M10 12.796V3.204L4.519 8zm-.659.753-5.48-4.796a1 1 0 0 1 0-1.506l5.48-4.796A1 1 0 0 1 11 3.204v9.592a1 1 0 0 1-1.659.753"/>
+                </svg>
+            </button>
+            <h2 class="my-2 mx-3"></h2>
         </div>
         <div id="albumContainer" class="d-flex flex-row flex-wrap">
             <div id="BlankImageDiv" class="d-none p-3">
@@ -183,6 +186,7 @@
                 <div id="image-modal-tags"><h3>Tags</h3></div>
             </div>
             <div class="modal-footer">
+                <button id="image-modal-removeFromAlbum" type="button" class="btn btn-danger">Remove from Album</button>
                 <button id="image-modal-download" type="button" class="btn btn-secondary">Download</button>
                 <button id="image-modal-close" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
             </div>

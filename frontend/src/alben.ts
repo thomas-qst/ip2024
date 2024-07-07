@@ -119,6 +119,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("image-modal")?.addEventListener("show.bs.modal",insertImageDataToModal);
 
+    document.getElementById("album-back-button")?.addEventListener("click",(ev) => {
+        let albumContainer = document.getElementById("albumContainer") as HTMLDivElement;
+        for(let i = 2; i < albumContainer.children.length; i++){
+            albumContainer.children[i].remove();
+        }
+        const albumName = document.getElementById("albumName") as HTMLDivElement;
+        albumName.classList.add("d-none");
+        fetchAlbums();
+    })
+
+    document.getElementById("image-modal-removeFromAlbum")?.addEventListener("click", async (ev) => {
+        const album = (document.getElementById("albumName")?.children[1] as HTMLParagraphElement).innerText;
+        const imageID = (document.getElementById("image-modal-image") as HTMLImageElement).alt.split("-")[1];
+        const albumID = (document.getElementById("albumName")?.children[1] as HTMLParagraphElement).id.split("-")[1];
+        try {
+            const res = await fetch("http://localhost:8888/albums/"+albumID+"/"+imageID, {
+                method: "delete",
+                mode: "cors",
+                headers:
+                    {
+                        "Content-Type": "application/json"
+                    },
+                credentials: "include"
+            });
+            const data = await res.json();
+            if(res.ok){
+                document.getElementById("image-modal-close")?.click();
+                document.getElementById("imageDiv-"+imageID)?.remove();
+            }
+        }catch (e){
+            console.error("Failed to remove Image from Album", e);
+        }
+    });
+
 
 });
 

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     yield getUsername();
     const userElement = document.getElementById("user");
     if (userElement != null) {
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         yield logout();
     }));
     (_c = document.getElementById("add-modal-submit")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", (event) => __awaiter(void 0, void 0, void 0, function* () {
-        var _k, _l;
+        var _m, _o;
         event.preventDefault();
         const title = document.getElementById("upload-modal-title").value;
         const tags = document.getElementById("upload-modal-tags").value;
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                         });
                         const data = yield res.json();
                         if (res.ok) {
-                            (_k = document.getElementById("upload-modal-close")) === null || _k === void 0 ? void 0 : _k.click();
+                            (_m = document.getElementById("upload-modal-close")) === null || _m === void 0 ? void 0 : _m.click();
                             window.location.reload();
                         }
                     }
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                     }
                 }
                 else {
-                    (_l = document.getElementById("upload-modal-close")) === null || _l === void 0 ? void 0 : _l.click();
+                    (_o = document.getElementById("upload-modal-close")) === null || _o === void 0 ? void 0 : _o.click();
                     window.location.reload();
                 }
             }
@@ -119,6 +119,39 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     }
     (_h = document.getElementById("album-modal-delete")) === null || _h === void 0 ? void 0 : _h.addEventListener("click", deleteAlbum);
     (_j = document.getElementById("image-modal")) === null || _j === void 0 ? void 0 : _j.addEventListener("show.bs.modal", insertImageDataToModal);
+    (_k = document.getElementById("album-back-button")) === null || _k === void 0 ? void 0 : _k.addEventListener("click", (ev) => {
+        let albumContainer = document.getElementById("albumContainer");
+        for (let i = 2; i < albumContainer.children.length; i++) {
+            albumContainer.children[i].remove();
+        }
+        const albumName = document.getElementById("albumName");
+        albumName.classList.add("d-none");
+        fetchAlbums();
+    });
+    (_l = document.getElementById("image-modal-removeFromAlbum")) === null || _l === void 0 ? void 0 : _l.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        var _p, _q, _r, _s;
+        const album = ((_p = document.getElementById("albumName")) === null || _p === void 0 ? void 0 : _p.children[1]).innerText;
+        const imageID = document.getElementById("image-modal-image").alt.split("-")[1];
+        const albumID = ((_q = document.getElementById("albumName")) === null || _q === void 0 ? void 0 : _q.children[1]).id.split("-")[1];
+        try {
+            const res = yield fetch("http://localhost:8888/albums/" + albumID + "/" + imageID, {
+                method: "delete",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            const data = yield res.json();
+            if (res.ok) {
+                (_r = document.getElementById("image-modal-close")) === null || _r === void 0 ? void 0 : _r.click();
+                (_s = document.getElementById("imageDiv-" + imageID)) === null || _s === void 0 ? void 0 : _s.remove();
+            }
+        }
+        catch (e) {
+            console.error("Failed to remove Image from Album", e);
+        }
+    }));
 }));
 /**
  * if boolean is not set, then it deletes the image from the context of the event.

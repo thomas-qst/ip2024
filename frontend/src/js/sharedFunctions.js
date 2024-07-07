@@ -222,7 +222,8 @@ function fetchImages(ev, album) {
             }
             const albumNameDiv = document.getElementById("albumName");
             albumNameDiv.classList.remove("d-none");
-            albumNameDiv.children[0].innerText = ((_a = ev.target.nextElementSibling) === null || _a === void 0 ? void 0 : _a.children[0]).innerText;
+            albumNameDiv.children[1].innerText = ((_a = ev.target.nextElementSibling) === null || _a === void 0 ? void 0 : _a.children[0]).innerText;
+            albumNameDiv.children[1].id = "albumID-" + ev.target.nextElementSibling.id.split("-")[1];
             try {
                 res = yield fetch(`http://localhost:8888/albums/${album}`, {
                     method: 'GET',

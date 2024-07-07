@@ -237,7 +237,8 @@ async function fetchImages(ev?:Event, album? : string){
         }
         const albumNameDiv = document.getElementById("albumName") as HTMLDivElement;
         albumNameDiv.classList.remove("d-none");
-        (albumNameDiv.children[0] as HTMLHeadElement).innerText = ((ev.target as HTMLElement).nextElementSibling?.children[0] as HTMLParagraphElement).innerText;
+        (albumNameDiv.children[1] as HTMLHeadElement).innerText = ((ev.target as HTMLElement).nextElementSibling?.children[0] as HTMLParagraphElement).innerText;
+        albumNameDiv.children[1].id = "albumID-"+((ev.target as HTMLElement).nextElementSibling as HTMLDivElement).id.split("-")[1];
         try{
             res = await fetch(`http://localhost:8888/albums/${album}`, {
                 method: 'GET',
