@@ -1,6 +1,6 @@
 let username : string;
 let selected : Array<number> = [];
-const max_ElementDimension = 250;
+const max_ElementDimension = 15;
 
 /**
  * Interface to use the relatedTarget of the BoostrapModalEvent
@@ -141,7 +141,7 @@ async function fetchAlbums(){
             for(let i = 0; i < array.length; i++){
                 let divCopy = document.getElementById("BlankAlbumDiv")?.cloneNode(true) as HTMLDivElement;
                 divCopy.id = "albumDiv-"+array[i].album_id;
-                divCopy.setAttribute("style","height: "+(max_ElementDimension+50)+"px; width:"+(max_ElementDimension+50)+"px;");
+                divCopy.setAttribute("style","height: "+(max_ElementDimension+1)+"rem; width:"+(max_ElementDimension+1)+"rem;");
                 container.appendChild(divCopy);
                 divCopy = document.getElementById("albumDiv-"+array[i].album_id) as HTMLDivElement;
                 divCopy.addEventListener("mouseenter",(ev) => {
@@ -278,7 +278,7 @@ async function fetchImages(ev?:Event, album? : string){
             divCopy = document.getElementById("imageDiv-"+array[i].photo_id) as HTMLDivElement;
             divCopy.addEventListener("mouseenter",imageDivHover);
             divCopy.addEventListener("mouseleave",imageDivLeave);
-            divCopy.setAttribute("style","height: "+(max_ElementDimension+50)+"px; width:"+(max_ElementDimension+50)+"px;");
+            divCopy.setAttribute("style","height: "+(max_ElementDimension+1)+"rem; width:"+(max_ElementDimension+1)+"rem;");
             let imageCopy = divCopy.children[1] as HTMLImageElement;
             imageCopy.id = "image-"+array[i].photo_id;
             imageCopy.src = array[i].photo;
@@ -314,7 +314,7 @@ async function fetchImages(ev?:Event, album? : string){
 }
 
 /**
- * Resizes the given ImageElement to the max_ElementDimension specified in the function.
+ * Resizes the given ImageElement to the max_ElementDimension specified in the function. (uses rem)
  *
  * @param imageElement
  * @param image
@@ -324,13 +324,13 @@ function resizeImage(imageElement : HTMLElement,image? : boolean){
         let height = (imageElement as HTMLImageElement).height;
         let width = (imageElement as HTMLImageElement).width;
         if(height > width){
-            imageElement.style.height = `${max_ElementDimension}px`;
+            imageElement.style.height = `${max_ElementDimension}rem`;
         }else{
-            imageElement.style.width = `${max_ElementDimension}px`;
+            imageElement.style.width = `${max_ElementDimension}rem`;
         }
     }else{
-        imageElement.style.width = `${max_ElementDimension}px`;
-        imageElement.style.height = `${max_ElementDimension}px`;
+        imageElement.style.width = `${max_ElementDimension}rem`;
+        imageElement.style.height = `${max_ElementDimension}rem`;
     }
 
 }

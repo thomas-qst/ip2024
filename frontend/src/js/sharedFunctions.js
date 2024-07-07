@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 let username;
 let selected = [];
-const max_ElementDimension = 250;
+const max_ElementDimension = 15;
 /**
  * gets the Username stored in the session from the backend and sets the username variable accordingly.
  * If the fetch fails it redirects to the login page.
@@ -127,7 +127,7 @@ function fetchAlbums() {
                 for (let i = 0; i < array.length; i++) {
                     let divCopy = (_a = document.getElementById("BlankAlbumDiv")) === null || _a === void 0 ? void 0 : _a.cloneNode(true);
                     divCopy.id = "albumDiv-" + array[i].album_id;
-                    divCopy.setAttribute("style", "height: " + (max_ElementDimension + 50) + "px; width:" + (max_ElementDimension + 50) + "px;");
+                    divCopy.setAttribute("style", "height: " + (max_ElementDimension + 1) + "rem; width:" + (max_ElementDimension + 1) + "rem;");
                     container.appendChild(divCopy);
                     divCopy = document.getElementById("albumDiv-" + array[i].album_id);
                     divCopy.addEventListener("mouseenter", (ev) => {
@@ -270,7 +270,7 @@ function fetchImages(ev, album) {
                 divCopy = document.getElementById("imageDiv-" + array[i].photo_id);
                 divCopy.addEventListener("mouseenter", imageDivHover);
                 divCopy.addEventListener("mouseleave", imageDivLeave);
-                divCopy.setAttribute("style", "height: " + (max_ElementDimension + 50) + "px; width:" + (max_ElementDimension + 50) + "px;");
+                divCopy.setAttribute("style", "height: " + (max_ElementDimension + 1) + "rem; width:" + (max_ElementDimension + 1) + "rem;");
                 let imageCopy = divCopy.children[1];
                 imageCopy.id = "image-" + array[i].photo_id;
                 imageCopy.src = array[i].photo;
@@ -307,7 +307,7 @@ function fetchImages(ev, album) {
     });
 }
 /**
- * Resizes the given ImageElement to the max_ElementDimension specified in the function.
+ * Resizes the given ImageElement to the max_ElementDimension specified in the function. (uses rem)
  *
  * @param imageElement
  * @param image
@@ -317,15 +317,15 @@ function resizeImage(imageElement, image) {
         let height = imageElement.height;
         let width = imageElement.width;
         if (height > width) {
-            imageElement.style.height = `${max_ElementDimension}px`;
+            imageElement.style.height = `${max_ElementDimension}rem`;
         }
         else {
-            imageElement.style.width = `${max_ElementDimension}px`;
+            imageElement.style.width = `${max_ElementDimension}rem`;
         }
     }
     else {
-        imageElement.style.width = `${max_ElementDimension}px`;
-        imageElement.style.height = `${max_ElementDimension}px`;
+        imageElement.style.width = `${max_ElementDimension}rem`;
+        imageElement.style.height = `${max_ElementDimension}rem`;
     }
 }
 /**
