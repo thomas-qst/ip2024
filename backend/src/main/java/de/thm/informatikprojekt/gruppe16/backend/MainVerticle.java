@@ -281,7 +281,61 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void deletePictureFromAlbum(RoutingContext ctx){
-    //TODO: add function
+    String albumId = ctx.request().getParam("album_id");
+    String pictureId = ctx.request().getParam("picture_id");
+    String username = ctx.session().get("user");
+
+    if (username == null || username.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    Future<Boolean> checkOwnershipFuture = pool
+      .preparedQuery("SELECT 1 FROM album WHERE album_id = ? AND username = ?")
+      .execute(Tuple.of(albumId, username))
+      .compose(albumRows -> {
+        if (albumRows.size() == 0) {
+          return Future.failedFuture("Album not found or user not authorized");
+        }
+        return Future.succeededFuture(true);
+      });
+
+    checkOwnershipFuture.compose(v ->
+      pool
+        .preparedQuery("DELETE FROM albumfoto WHERE album_id = ? AND photo_id = ?")
+        .execute(Tuple.of(albumId, pictureId))
+    ).onComplete(ar -> {
+      if (ar.succeeded()) {
+        if (ar.result().rowCount() > 0) {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(200)
+            .end(Json.encodePrettily(new JsonObject().put("success", "Picture removed from album")));
+        } else {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(404)
+            .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found in the album")));
+        }
+      } else {
+        String errorMessage = ar.cause().getMessage();
+        if ("Album not found or user not authorized".equals(errorMessage)) {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(404)
+            .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+        } else {
+          ar.cause().printStackTrace();
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(500)
+            .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+        }
+      }
+    });
   }
 
   public void getPicturesByUsername(RoutingContext ctx) {
@@ -471,8 +525,76 @@ public class MainVerticle extends AbstractVerticle {
       });
   }
 
-  public void getUserbyUsername(RoutingContext ctx){
-    //TODO add function
+  public void getUserbyUsername(RoutingContext ctx) {
+    String requestedUsername = ctx.pathParam("username");
+    String currentUser = ctx.session().get("user");
+
+    if (currentUser == null || currentUser.isEmpty()) {
+      ctx.response()
+        .putHeader("content-type", "application/json")
+        .setStatusCode(401)
+        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+      return;
+    }
+
+    pool.preparedQuery("SELECT username, is_Admin, one_time_password FROM user WHERE username = ?")
+      .execute(Tuple.of(requestedUsername))
+      .compose(rows -> {
+        if (rows.size() == 1) {
+          Row row = rows.iterator().next();
+          JsonObject userJson = new JsonObject()
+            .put("username", row.getString("username"))
+            .put("is_Admin", row.getBoolean("is_Admin"));
+
+          if (currentUser.equals(requestedUsername)) {
+            userJson.put("one_time_password", row.getBoolean("one_time_password"));
+            return Future.succeededFuture(userJson);
+          } else {
+            return isAdmin(currentUser).map(isAdmin -> {
+              if (isAdmin) {
+                userJson.put("one_time_password", row.getBoolean("one_time_password"));
+              }
+              return userJson;
+            });
+          }
+        } else {
+          return Future.failedFuture("User not found");
+        }
+      })
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          ctx.response()
+            .putHeader("content-type", "application/json")
+            .setStatusCode(200)
+            .end(Json.encodePrettily(new JsonObject().put("success", "User found").put("data", ar.result())));
+        } else {
+          String errorMessage = ar.cause().getMessage();
+          if ("User not found".equals(errorMessage)) {
+            ctx.response()
+              .putHeader("content-type", "application/json")
+              .setStatusCode(404)
+              .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+          } else {
+            ar.cause().printStackTrace();
+            ctx.response()
+              .putHeader("content-type", "application/json")
+              .setStatusCode(500)
+              .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+          }
+        }
+      });
+  }
+
+  private Future<Boolean> isAdmin(String username) {
+    return pool.preparedQuery("SELECT is_Admin FROM user WHERE username = ?")
+      .execute(Tuple.of(username))
+      .map(rows -> {
+        if (rows.size() == 1) {
+          return rows.iterator().next().getBoolean("is_Admin");
+        } else {
+          return false;
+        }
+      });
   }
 
   public void deleteUser(RoutingContext ctx){
