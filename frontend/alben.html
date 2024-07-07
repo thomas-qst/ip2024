@@ -26,7 +26,7 @@
                 <div class="dropdown" data-bs-theme="dark">
                     <ul class="dropdown-menu text-small" aria-labelledby="dropdownMenuButtonDark" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-41.5px, 34px, 0px);" data-popper-placement="bottom-start">
                         <li>
-                            <a class="dropdown-item" href="#">User management</a>
+                            <a class="dropdown-item d-none" id="UserManagement" href="#" data-bs-toggle="modal" data-bs-target="#userManagement-modal">User management</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="/index.html" id="logout">Logout</a>
@@ -185,6 +185,41 @@
             <div class="modal-footer">
                 <button id="image-modal-download" type="button" class="btn btn-secondary">Download</button>
                 <button id="image-modal-close" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" id="userManagement-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">User Management</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userManagement-modal-addUserForm">
+                    <div class="form-floating">
+                        <input id="userManagement-modal-addUserForm-Username" placeholder="Username" type="text" class="form-control d-inline my-2">
+                        <label for="userManagement-modal-addUserForm-Username">Username</label>
+                    </div>
+                    <div class="form-floating">
+                        <input id="userManagement-modal-addUserForm-Password" placeholder="One Time Password" type="password" class="form-control d-inline my-2">
+                        <label for="userManagement-modal-addUserForm-Password">One Time Password</label>
+                    </div>
+                    <button class="btn btn-success my-2" type="submit">Add User</button>
+                </form>
+                <div id="userManagement-modal-BlankUser" class="border container text-center d-none">
+                    <div class="row">
+                        <p class="my-0 mx-2 col align-content-center"></p>
+                        <p class="my-0 mx-2 col align-content-center">User</p>
+                        <button id="userManagement-modal-BlankDelete" class="btn btn-danger m-2 col">Delete User</button>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="userManagement-modal-close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

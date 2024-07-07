@@ -498,10 +498,18 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public void getUsers(RoutingContext ctx){
-    //TODO add auth
+    String username = ctx.session().get("user");
+    if(!Objects.equals(username, "Admin")){
+      ctx.response()
+        .setStatusCode(401)
+        .putHeader("content-type", "application/json")
+        .end(Json.encodePrettily(new JsonObject().put("error", "Unauthorized")));
+      return;
+    }
+
     JsonArray ja = new JsonArray();
     pool
-      .query("SELECT username,is_Admin from user")
+      .query("SELECT username from user where username != 'Admin'")
       .execute()
       .onFailure(e -> {
         e.printStackTrace();
@@ -514,86 +522,13 @@ public class MainVerticle extends AbstractVerticle {
         for(Row row: rows){
           JsonObject userJson = new JsonObject();
           userJson
-            .put("username", row.getString("username"))
-            .put("is_Admin", row.getString("is_Admin"));
+            .put("username", row.getString("username"));
           ja.add(userJson);
         }
         ctx.response()
           .setStatusCode(200)
           .putHeader("content-type","application/json")
           .end(Json.encodePrettily(new JsonObject().put("success","Users found").put("data", ja)));
-      });
-  }
-
-  public void getUserbyUsername(RoutingContext ctx) {
-    String requestedUsername = ctx.pathParam("username");
-    String currentUser = ctx.session().get("user");
-
-    if (currentUser == null || currentUser.isEmpty()) {
-      ctx.response()
-        .putHeader("content-type", "application/json")
-        .setStatusCode(401)
-        .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
-      return;
-    }
-
-    pool.preparedQuery("SELECT username, is_Admin, one_time_password FROM user WHERE username = ?")
-      .execute(Tuple.of(requestedUsername))
-      .compose(rows -> {
-        if (rows.size() == 1) {
-          Row row = rows.iterator().next();
-          JsonObject userJson = new JsonObject()
-            .put("username", row.getString("username"))
-            .put("is_Admin", row.getBoolean("is_Admin"));
-
-          if (currentUser.equals(requestedUsername)) {
-            userJson.put("one_time_password", row.getBoolean("one_time_password"));
-            return Future.succeededFuture(userJson);
-          } else {
-            return isAdmin(currentUser).map(isAdmin -> {
-              if (isAdmin) {
-                userJson.put("one_time_password", row.getBoolean("one_time_password"));
-              }
-              return userJson;
-            });
-          }
-        } else {
-          return Future.failedFuture("User not found");
-        }
-      })
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          ctx.response()
-            .putHeader("content-type", "application/json")
-            .setStatusCode(200)
-            .end(Json.encodePrettily(new JsonObject().put("success", "User found").put("data", ar.result())));
-        } else {
-          String errorMessage = ar.cause().getMessage();
-          if ("User not found".equals(errorMessage)) {
-            ctx.response()
-              .putHeader("content-type", "application/json")
-              .setStatusCode(404)
-              .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
-          } else {
-            ar.cause().printStackTrace();
-            ctx.response()
-              .putHeader("content-type", "application/json")
-              .setStatusCode(500)
-              .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
-          }
-        }
-      });
-  }
-
-  private Future<Boolean> isAdmin(String username) {
-    return pool.preparedQuery("SELECT is_Admin FROM user WHERE username = ?")
-      .execute(Tuple.of(username))
-      .map(rows -> {
-        if (rows.size() == 1) {
-          return rows.iterator().next().getBoolean("is_Admin");
-        } else {
-          return false;
-        }
       });
   }
 
@@ -609,16 +544,19 @@ public class MainVerticle extends AbstractVerticle {
       return;
     }
 
+    if(Objects.equals(usernameToDelete, "Admin")){
+      ctx.response()
+        .setStatusCode(401)
+        .putHeader("content-type", "application/json")
+        .end(Json.encodePrettily(new JsonObject().put("error", "unauthorized")));
+    }
+
     // Check if the requesting user is an admin
-    pool.preparedQuery("SELECT is_Admin FROM user WHERE username = ?")
+    pool.preparedQuery("SELECT username FROM user WHERE username = ?")
       .execute(Tuple.of(requestingUser))
       .compose(rows -> {
         if (rows.size() == 0) {
           return Future.failedFuture("Requesting user not found");
-        }
-        boolean isAdmin = rows.iterator().next().getBoolean("is_Admin");
-        if (!isAdmin && !requestingUser.equals(usernameToDelete)) {
-          return Future.failedFuture("Not authorized to delete this user");
         }
         return Future.succeededFuture();
       })
@@ -678,7 +616,7 @@ public class MainVerticle extends AbstractVerticle {
       })
       .onFailure(e -> {
         String errorMessage = e.getMessage();
-        if ("Requesting user not found".equals(errorMessage) || "Not authorized to delete this user".equals(errorMessage)) {
+        if ("Requesting user not found".equals(errorMessage)) {
           ctx.response()
             .putHeader("content-type", "application/json")
             .setStatusCode(403)
@@ -827,31 +765,12 @@ public class MainVerticle extends AbstractVerticle {
 
   public void addUser(RoutingContext ctx){
     String requestUser = ctx.session().get("user");
-    pool
-      .preparedQuery("select is_Admin from user where username = (?)")
-      .execute(Tuple.of(requestUser))
-      .onFailure(e -> {
-        e.printStackTrace();
-        ctx.response()
-          .setStatusCode(500)
-          .putHeader("content-type", "application/json")
-          .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
-      })
-      .onSuccess(rows -> {
-        if(rows.size() < 1){
-          ctx.response()
-            .setStatusCode(401)
-            .putHeader("content-type", "application/json")
-            .end(Json.encodePrettily(new JsonObject().put("error", "User not in Database!")));
-          return;
-        }
-        if(!rows.iterator().next().getBoolean("is_Admin")){
-          ctx.response()
-            .putHeader("content-type", "application/json")
-            .setStatusCode(401)
-            .end(Json.encodePrettily(new JsonObject().put("error","Only Admin can add Users!")));
-        }
-      });
+    if(!Objects.equals(requestUser, "Admin")){
+      ctx.response()
+        .setStatusCode(401)
+        .putHeader("content-type", "application/json")
+        .end(Json.encodePrettily(new JsonObject().put("error", "unauthorized")));
+    }
 
     JsonObject jObj = ctx.getBodyAsJson();
     if(jObj == null){
@@ -862,7 +781,7 @@ public class MainVerticle extends AbstractVerticle {
       return;
     }
     String username = jObj.getString("username");
-    String password_hash = passwordHash(jObj.getString("password_hash"));
+    String password_hash = passwordHash(jObj.getString("password"));
     boolean otp;
     if(!jObj.containsKey("OTP")){
       otp = true;
@@ -904,8 +823,8 @@ public class MainVerticle extends AbstractVerticle {
             .end(Json.encodePrettily(new JsonObject().put("error", "Username already in Database")));
         } else {
           pool
-            .preparedQuery("INSERT INTO user (username, password_hash, one_time_password, is_Admin) VALUES (?, ?, ?, ?)")
-            .execute(Tuple.of(finalUsername, finalPassword_hash, otp, false))
+            .preparedQuery("INSERT INTO user (username, password_hash, one_time_password) VALUES (?, ?, ?)")
+            .execute(Tuple.of(finalUsername, finalPassword_hash, otp))
             .onFailure(e -> {
               e.printStackTrace();
               ctx.response()

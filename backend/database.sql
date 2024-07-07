@@ -4,8 +4,7 @@ use FotoApplication;
 CREATE TABLE User (
     username VARCHAR(32) PRIMARY KEY NOT NULL,
     password_hash VARCHAR(61) NOT NULL,
-    one_time_password boolean NOT NULL,
-    is_Admin boolean NOT NULL
+    one_time_password boolean NOT NULL
 );
 
 CREATE TABLE Album(
@@ -50,4 +49,4 @@ grant all privileges on FotoApplication to 'FotoApplication'@'localhost';
 grant all privileges on FotoApplication.* to 'FotoApplication'@'localhost';
 flush privileges;
 
-INSERT INTO User (username, password_hash, one_time_password, is_Admin) VALUES ("Admin","$2a$10$cSf1hx0I.Yc8sPaz00B0G.LsToAjFlP2RJlMnNQBq.cbPxrOYnG3a",true,true);
+INSERT INTO User (username, password_hash, one_time_password) VALUES ("Admin","$2a$10$cSf1hx0I.Yc8sPaz00B0G.LsToAjFlP2RJlMnNQBq.cbPxrOYnG3a",true);

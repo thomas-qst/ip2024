@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         userElement.innerText = username;
     }
 
+    if(username == "Admin"){
+        document.getElementById("UserManagement")?.classList.remove("d-none");
+    }
+
     await fetchImages();
 
     document.getElementById("logout")?.addEventListener("click", async (event)=>{

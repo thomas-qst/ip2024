@@ -9,20 +9,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     yield getUsername();
     const userElement = document.getElementById("user");
     if (userElement != null) {
         userElement.innerText = username;
     }
+    if (username == "Admin") {
+        (_a = document.getElementById("UserManagement")) === null || _a === void 0 ? void 0 : _a.classList.remove("d-none");
+    }
     yield fetchAlbums();
-    (_a = document.getElementById("logout")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", (event) => __awaiter(void 0, void 0, void 0, function* () {
+    (_b = document.getElementById("logout")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", (event) => __awaiter(void 0, void 0, void 0, function* () {
         event.preventDefault();
         document.cookie = "";
         yield logout();
     }));
-    (_b = document.getElementById("add-modal-submit")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", (event) => __awaiter(void 0, void 0, void 0, function* () {
-        var _j, _k;
+    (_c = document.getElementById("add-modal-submit")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", (event) => __awaiter(void 0, void 0, void 0, function* () {
+        var _k, _l;
         event.preventDefault();
         const title = document.getElementById("upload-modal-title").value;
         const tags = document.getElementById("upload-modal-tags").value;
@@ -52,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                         });
                         const data = yield res.json();
                         if (res.ok) {
-                            (_j = document.getElementById("upload-modal-close")) === null || _j === void 0 ? void 0 : _j.click();
+                            (_k = document.getElementById("upload-modal-close")) === null || _k === void 0 ? void 0 : _k.click();
                             window.location.reload();
                         }
                     }
@@ -61,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                     }
                 }
                 else {
-                    (_k = document.getElementById("upload-modal-close")) === null || _k === void 0 ? void 0 : _k.click();
+                    (_l = document.getElementById("upload-modal-close")) === null || _l === void 0 ? void 0 : _l.click();
                     window.location.reload();
                 }
             }
@@ -70,10 +73,10 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             console.error("Failed to upload Image", error);
         }
     }));
-    (_c = document.getElementById("deleteMultiple")) === null || _c === void 0 ? void 0 : _c.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+    (_d = document.getElementById("deleteMultiple")) === null || _d === void 0 ? void 0 : _d.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
         yield deleteAlbum(ev, true);
     }));
-    (_d = document.getElementById("album-modal")) === null || _d === void 0 ? void 0 : _d.addEventListener("show.bs.modal", (event) => {
+    (_e = document.getElementById("album-modal")) === null || _e === void 0 ? void 0 : _e.addEventListener("show.bs.modal", (event) => {
         var _a, _b;
         const ev = event;
         const imageDiv = ev.relatedTarget.parentElement;
@@ -91,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         modalDate.children[1].textContent = metadata.children[1].innerHTML;
         modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
     });
-    (_e = document.getElementById("album-modal")) === null || _e === void 0 ? void 0 : _e.addEventListener("hide.bs.modal", (ev) => {
+    (_f = document.getElementById("album-modal")) === null || _f === void 0 ? void 0 : _f.addEventListener("hide.bs.modal", (ev) => {
         var _a;
         const tagsDiv = document.getElementById("album-modal-tags");
         tagsDiv.innerHTML = "<h3>Tags</h3>";
@@ -110,12 +113,12 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             button.addEventListener("click", clickModalEdit);
         }
     });
-    (_f = document.getElementById("album-modal-edit")) === null || _f === void 0 ? void 0 : _f.addEventListener("click", clickModalEdit);
+    (_g = document.getElementById("album-modal-edit")) === null || _g === void 0 ? void 0 : _g.addEventListener("click", clickModalEdit);
     function clickModalEdit(ev) {
         editButtonToSave(ev, true);
     }
-    (_g = document.getElementById("album-modal-delete")) === null || _g === void 0 ? void 0 : _g.addEventListener("click", deleteAlbum);
-    (_h = document.getElementById("image-modal")) === null || _h === void 0 ? void 0 : _h.addEventListener("show.bs.modal", insertImageDataToModal);
+    (_h = document.getElementById("album-modal-delete")) === null || _h === void 0 ? void 0 : _h.addEventListener("click", deleteAlbum);
+    (_j = document.getElementById("image-modal")) === null || _j === void 0 ? void 0 : _j.addEventListener("show.bs.modal", insertImageDataToModal);
 }));
 /**
  * if boolean is not set, then it deletes the image from the context of the event.

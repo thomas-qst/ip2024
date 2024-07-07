@@ -357,18 +357,105 @@ function removeFromSelected(ev) {
     }
 }
 document.addEventListener("DOMContentLoaded", () => {
-    var _a;
+    var _a, _b, _c, _d;
     (_a = document.getElementById("cancelSelect")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", (ev) => {
         var _a, _b;
         for (const ID of selected) {
-            console.log(ID);
             document.getElementById("checkboxButton-" + ID).checked = false;
             ((_a = document.getElementById("checkboxButton-" + ID)) === null || _a === void 0 ? void 0 : _a.nextElementSibling).classList.add("d-none");
         }
         selected = [];
         (_b = document.getElementById("selectedDiv")) === null || _b === void 0 ? void 0 : _b.classList.add("d-none");
     });
+    (_b = document.getElementById("userManagement-modal")) === null || _b === void 0 ? void 0 : _b.addEventListener("show.bs.modal", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        const blankDiv = document.getElementById("userManagement-modal-BlankUser");
+        try {
+            let res = yield fetch("http://localhost:8888/users", {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            let data = yield res.json();
+            if (res.status == 200) {
+                console.log(data.data);
+                for (let i = 0; i < data.data.length; i++) {
+                    const username = data.data[i].username;
+                    let modalBody = blankDiv.parentElement;
+                    let newDiv = blankDiv.cloneNode(true);
+                    let rowDiv = newDiv.children[0];
+                    newDiv.id = "userManagement-modal-" + username;
+                    rowDiv.children[0].innerText = username;
+                    rowDiv.children[2].id = "userManagement-modal-delete-" + username;
+                    rowDiv.children[2].addEventListener("click", deleteUser);
+                    newDiv.classList.remove("d-none");
+                    modalBody.append(newDiv);
+                }
+            }
+        }
+        catch (e) {
+            console.error("failed to fetch users, " + e);
+        }
+    }));
+    (_c = document.getElementById("userManagement-modal")) === null || _c === void 0 ? void 0 : _c.addEventListener("hide.bs.modal", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        const blankDiv = document.getElementById("userManagement-modal-BlankUser");
+        const formDiv = document.getElementById("userManagement-modal-addUserForm");
+        let parentDiv = blankDiv.parentElement;
+        parentDiv.innerHTML = "";
+        parentDiv.append(formDiv, blankDiv);
+    }));
+    (_d = document.getElementById("userManagement-modal-addUserForm")) === null || _d === void 0 ? void 0 : _d.addEventListener("submit", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        var _e;
+        ev.preventDefault();
+        const username = document.getElementById("userManagement-modal-addUserForm-Username").value;
+        const password = document.getElementById("userManagement-modal-addUserForm-Password").value;
+        document.getElementById("userManagement-modal-addUserForm-Username").value = "";
+        document.getElementById("userManagement-modal-addUserForm-Password").value = "";
+        try {
+            let res = yield fetch("http://localhost:8888/users", {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({ "username": username, "password": password })
+            });
+            let data = yield res.json();
+            if (res.status == 201) {
+                (_e = document.getElementById("userManagement-modal-close")) === null || _e === void 0 ? void 0 : _e.click();
+            }
+        }
+        catch (e) {
+            console.error("failed to add user, " + e);
+        }
+    }));
 });
+function deleteUser(ev) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
+        const username = ev.target.id.split("-")[3];
+        try {
+            let res = yield fetch("http://localhost:8888/users/" + username, {
+                method: 'delete',
+                mode: 'cors',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"
+            });
+            let data = yield res.json();
+            if (res.status == 200) {
+                (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.remove();
+            }
+        }
+        catch (e) {
+            console.error("Failed to delete user, " + e);
+        }
+    });
+}
 function clickModalEditImage(ev) {
     editButtonToSave(ev);
 }
@@ -470,6 +557,12 @@ function addTag(ev, album) {
     tagsDiv.appendChild(para);
     document.getElementById(type + "-modal-add-tag-input").value = "";
 }
+/**
+ * Gets the Metadata from the Modal and sends a put request to the backend
+ * if album is true, Metadata is treated as album Metadata.
+ * @param ev
+ * @param {boolean}[album]
+ */
 function saveMetadata(ev, album) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
@@ -512,6 +605,10 @@ function saveMetadata(ev, album) {
         }
     });
 }
+/**
+ * Gets the image data from the event context and inserts it to the Image Modal
+ * @param event
+ */
 function insertImageDataToModal(event) {
     const ev = event;
     const imageDiv = ev.relatedTarget.parentElement;
