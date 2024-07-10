@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await fetchImages();
 
+    document.getElementById("search")?.addEventListener("input",  search);
+
     document.getElementById("logout")?.addEventListener("click", async (event)=>{
         event.preventDefault();
         document.cookie = "";
@@ -335,8 +337,3 @@ function removeFromSelectedAlbums(ev:Event){
         console.error("Item not found in Index!");
     }
 }
-
-
-
-
-

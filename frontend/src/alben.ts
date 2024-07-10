@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await fetchAlbums();
 
+    document.getElementById("albumSearch")?.addEventListener("input",  search);
+
+
     document.getElementById("logout")?.addEventListener("click", async (event)=>{
         event.preventDefault();
         document.cookie = "";
@@ -125,9 +128,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             albumContainer.children[i].remove();
         }
         const albumName = document.getElementById("albumName") as HTMLDivElement;
+        albumName.children[1].innerHTML = "";
         albumName.classList.add("d-none");
         fetchAlbums();
-    })
+    });
 
     document.getElementById("image-modal-removeFromAlbum")?.addEventListener("click", async (ev) => {
         const album = (document.getElementById("albumName")?.children[1] as HTMLParagraphElement).innerText;

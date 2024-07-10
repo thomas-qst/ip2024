@@ -9,6 +9,7 @@ interface BootstrapModalEvent extends Event {
     relatedTarget: HTMLElement;
 }
 
+
 interface getUsers{
     username: string;
 }
@@ -378,6 +379,10 @@ document.addEventListener("DOMContentLoaded",() =>{
         selected = [];
         document.getElementById("selectedDiv")?.classList.add("d-none");
     });
+
+    document.getElementById("searchForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+    });
     document.getElementById("userManagement-modal")?.addEventListener("show.bs.modal",async (ev) => {
         const blankDiv = document.getElementById("userManagement-modal-BlankUser") as HTMLDivElement;
         try{
@@ -391,7 +396,6 @@ document.addEventListener("DOMContentLoaded",() =>{
             });
             let data = await res.json();
             if(res.status == 200){
-                console.log(data.data);
                 for(let i = 0; i < data.data.length; i++){
                     const username = data.data[i].username;
                     let modalBody = blankDiv.parentElement as HTMLDivElement;
@@ -508,10 +512,6 @@ function editButtonToSave(ev:Event,album? : boolean){
         button.removeEventListener("click",clickModalEditImage);
     }
     const body = button.parentElement?.previousElementSibling as HTMLDivElement;
-    console.log(body);
-    console.log(button);
-    console.log(button.parentElement);
-    console.log(button.parentElement?.previousElementSibling);
     const title = body.children[1].children[1] as HTMLParagraphElement;
     title.contentEditable = "plaintext-only";
     const date = body.children[2].children[1] as HTMLParagraphElement;
@@ -639,4 +639,71 @@ function insertImageDataToModal(event:Event){
     modalDate.append(document.createElement("p"));
     (modalDate.children[1] as HTMLParagraphElement).textContent = metadata.children[1].innerHTML;
     modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
+}
+
+function search(ev:Event){
+    let metadataIndex = 2;
+    let childIndex = 0;
+    let startIndex = 1;
+    let isAlbum : boolean = false;
+    let isInAlbum : boolean = false;
+    if((ev.target as HTMLInputElement).id.startsWith("album")){
+        isAlbum = true;
+        if((document.getElementById("albumName")?.children[1] as HTMLParagraphElement).innerText !== ""){
+            isInAlbum = true;
+            startIndex = 2;
+            childIndex = 1;
+        }else{
+            metadataIndex = 3;
+            childIndex = 1;
+            startIndex = 2;
+        }
+    }
+    const mainDiv = document.getElementById("main") as HTMLElement;
+    const container = mainDiv.children[childIndex];
+    const inputText = (ev.target as HTMLInputElement).value;
+    let searchElements = [];
+    for(let i = startIndex; i < container.children.length; i++){
+        let child = container.children[i];
+        let metadataTopLevel = child.children[metadataIndex];
+        let title = (metadataTopLevel.children[0] as HTMLDivElement).innerText;
+        let metadataDiv = metadataTopLevel.children[2] as HTMLDivElement;
+        if(title.toUpperCase().includes(inputText.toUpperCase())){
+            searchElements.push(child);
+            continue;
+        }
+        for(let j = 0; j < metadataDiv.children.length; j++){
+            let tag = (metadataDiv.children[j] as HTMLParagraphElement).innerText;
+            if(tag.toUpperCase().includes(inputText.toUpperCase())){
+                searchElements.push(child);
+            }
+        }
+    }
+
+    hideAllElements((ev.target as HTMLInputElement).id.startsWith("album"));
+    if(inputText.length == 0){
+        for(let i = 0; i < container.children.length; i++){
+            if(container.children[i].id.startsWith("Blank")) continue;
+            container.children[i].classList.remove("d-none");
+        }
+    }
+    for(let i = 0; i< searchElements.length; i++){
+        if(searchElements[i].id.startsWith("Blank")){
+            continue;
+        }
+        searchElements[i].classList.remove("d-none");
+    }
+
+}
+
+function hideAllElements(album?:boolean){
+    let childIndex = 0;
+    if(album){
+        childIndex = 1;
+    }
+    const mainDiv = document.getElementById("main") as HTMLElement;
+    const container = mainDiv.children[childIndex];
+    for(let i = 0; i < container.children.length; i++){
+        container.children[i].classList.add("d-none");
+    }
 }

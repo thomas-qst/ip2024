@@ -358,7 +358,7 @@ function removeFromSelected(ev) {
     }
 }
 document.addEventListener("DOMContentLoaded", () => {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     (_a = document.getElementById("cancelSelect")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", (ev) => {
         var _a, _b;
         for (const ID of selected) {
@@ -368,7 +368,10 @@ document.addEventListener("DOMContentLoaded", () => {
         selected = [];
         (_b = document.getElementById("selectedDiv")) === null || _b === void 0 ? void 0 : _b.classList.add("d-none");
     });
-    (_b = document.getElementById("userManagement-modal")) === null || _b === void 0 ? void 0 : _b.addEventListener("show.bs.modal", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+    (_b = document.getElementById("searchForm")) === null || _b === void 0 ? void 0 : _b.addEventListener("submit", (e) => {
+        e.preventDefault();
+    });
+    (_c = document.getElementById("userManagement-modal")) === null || _c === void 0 ? void 0 : _c.addEventListener("show.bs.modal", (ev) => __awaiter(void 0, void 0, void 0, function* () {
         const blankDiv = document.getElementById("userManagement-modal-BlankUser");
         try {
             let res = yield fetch("http://localhost:8888/users", {
@@ -381,7 +384,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             let data = yield res.json();
             if (res.status == 200) {
-                console.log(data.data);
                 for (let i = 0; i < data.data.length; i++) {
                     const username = data.data[i].username;
                     let modalBody = blankDiv.parentElement;
@@ -400,15 +402,15 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("failed to fetch users, " + e);
         }
     }));
-    (_c = document.getElementById("userManagement-modal")) === null || _c === void 0 ? void 0 : _c.addEventListener("hide.bs.modal", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+    (_d = document.getElementById("userManagement-modal")) === null || _d === void 0 ? void 0 : _d.addEventListener("hide.bs.modal", (ev) => __awaiter(void 0, void 0, void 0, function* () {
         const blankDiv = document.getElementById("userManagement-modal-BlankUser");
         const formDiv = document.getElementById("userManagement-modal-addUserForm");
         let parentDiv = blankDiv.parentElement;
         parentDiv.innerHTML = "";
         parentDiv.append(formDiv, blankDiv);
     }));
-    (_d = document.getElementById("userManagement-modal-addUserForm")) === null || _d === void 0 ? void 0 : _d.addEventListener("submit", (ev) => __awaiter(void 0, void 0, void 0, function* () {
-        var _e;
+    (_e = document.getElementById("userManagement-modal-addUserForm")) === null || _e === void 0 ? void 0 : _e.addEventListener("submit", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+        var _f;
         ev.preventDefault();
         const username = document.getElementById("userManagement-modal-addUserForm-Username").value;
         const password = document.getElementById("userManagement-modal-addUserForm-Password").value;
@@ -426,7 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             let data = yield res.json();
             if (res.status == 201) {
-                (_e = document.getElementById("userManagement-modal-close")) === null || _e === void 0 ? void 0 : _e.click();
+                (_f = document.getElementById("userManagement-modal-close")) === null || _f === void 0 ? void 0 : _f.click();
             }
         }
         catch (e) {
@@ -477,7 +479,7 @@ function clickModalSaveImage(ev) {
  * @param {boolean}[album]
  */
 function editButtonToSave(ev, album) {
-    var _a, _b;
+    var _a;
     let type = "image";
     if (album) {
         type = "album";
@@ -496,10 +498,6 @@ function editButtonToSave(ev, album) {
         button.removeEventListener("click", clickModalEditImage);
     }
     const body = (_a = button.parentElement) === null || _a === void 0 ? void 0 : _a.previousElementSibling;
-    console.log(body);
-    console.log(button);
-    console.log(button.parentElement);
-    console.log((_b = button.parentElement) === null || _b === void 0 ? void 0 : _b.previousElementSibling);
     const title = body.children[1].children[1];
     title.contentEditable = "plaintext-only";
     const date = body.children[2].children[1];
@@ -626,4 +624,70 @@ function insertImageDataToModal(event) {
     modalDate.append(document.createElement("p"));
     modalDate.children[1].textContent = metadata.children[1].innerHTML;
     modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
+}
+function search(ev) {
+    var _a;
+    let metadataIndex = 2;
+    let childIndex = 0;
+    let startIndex = 1;
+    let isAlbum = false;
+    let isInAlbum = false;
+    if (ev.target.id.startsWith("album")) {
+        isAlbum = true;
+        if (((_a = document.getElementById("albumName")) === null || _a === void 0 ? void 0 : _a.children[1]).innerText !== "") {
+            isInAlbum = true;
+            startIndex = 2;
+            childIndex = 1;
+        }
+        else {
+            metadataIndex = 3;
+            childIndex = 1;
+            startIndex = 2;
+        }
+    }
+    const mainDiv = document.getElementById("main");
+    const container = mainDiv.children[childIndex];
+    const inputText = ev.target.value;
+    let searchElements = [];
+    for (let i = startIndex; i < container.children.length; i++) {
+        let child = container.children[i];
+        let metadataTopLevel = child.children[metadataIndex];
+        let title = metadataTopLevel.children[0].innerText;
+        let metadataDiv = metadataTopLevel.children[2];
+        if (title.toUpperCase().includes(inputText.toUpperCase())) {
+            searchElements.push(child);
+            continue;
+        }
+        for (let j = 0; j < metadataDiv.children.length; j++) {
+            let tag = metadataDiv.children[j].innerText;
+            if (tag.toUpperCase().includes(inputText.toUpperCase())) {
+                searchElements.push(child);
+            }
+        }
+    }
+    hideAllElements(ev.target.id.startsWith("album"));
+    if (inputText.length == 0) {
+        for (let i = 0; i < container.children.length; i++) {
+            if (container.children[i].id.startsWith("Blank"))
+                continue;
+            container.children[i].classList.remove("d-none");
+        }
+    }
+    for (let i = 0; i < searchElements.length; i++) {
+        if (searchElements[i].id.startsWith("Blank")) {
+            continue;
+        }
+        searchElements[i].classList.remove("d-none");
+    }
+}
+function hideAllElements(album) {
+    let childIndex = 0;
+    if (album) {
+        childIndex = 1;
+    }
+    const mainDiv = document.getElementById("main");
+    const container = mainDiv.children[childIndex];
+    for (let i = 0; i < container.children.length; i++) {
+        container.children[i].classList.add("d-none");
+    }
 }
