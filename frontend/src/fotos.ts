@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fileInput = document.getElementById("upload-modal-input") as HTMLInputElement;
         const errorElement = document.getElementById("upload-modal-error") as HTMLElement;
         if(event.dataTransfer != null){
-            let alert = false;
             if(event.dataTransfer.files.length > 1){
                 let button = errorElement.firstElementChild as HTMLElement;
                 errorElement.innerHTML = "";
@@ -75,9 +74,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         tags.value = "";
     });
 
-    document.getElementById("upload-modal-input")?.addEventListener("change", async (event)=>{
-
-    });
 
     document.getElementById("upload-modal-submit")?.addEventListener("click", async () => {
         const file = (document.getElementById("upload-modal-input") as HTMLInputElement).files;
@@ -111,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const photoID = data.photo_id;
                     if(tags.length != 0){
                         try{
-                            const res = await fetch("http://localhost:8888/tags/pictures/"+photoID, {
+                            const res = await fetch("http://localhost:8888/pictures/"+photoID+"/tags", {
                                 method: "put",
                                 mode: "cors",
                                 headers:
@@ -147,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("image-modal")?.addEventListener("show.bs.modal",insertImageDataToModal);
 
-    document.getElementById("image-modal")?.addEventListener("hide.bs.modal",(ev:Event) => {
+    document.getElementById("image-modal")?.addEventListener("hide.bs.modal",() => {
         const tagsDiv = document.getElementById("image-modal-tags") as HTMLDivElement;
         tagsDiv.innerHTML = "<h3>Tags</h3>";
         const titleDiv = document.getElementById("image-modal-title") as HTMLDivElement;

@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const albumId = data.album_id;
                 if(tags.length != 0){
                     try{
-                        const res = await fetch("http://localhost:8888/tags/albums/"+albumId, {
+                        const res = await fetch("http://localhost:8888/albums/"+albumId+"/tags", {
                             method: "put",
                             mode: "cors",
                             headers:
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
     });
 
-    document.getElementById("album-modal")?.addEventListener("hide.bs.modal",(ev:Event) => {
+    document.getElementById("album-modal")?.addEventListener("hide.bs.modal",() => {
         const tagsDiv = document.getElementById("album-modal-tags") as HTMLDivElement;
         tagsDiv.innerHTML = "<h3>Tags</h3>";
         const titleDiv = document.getElementById("album-modal-title") as HTMLDivElement;
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("image-modal")?.addEventListener("show.bs.modal",insertImageDataToModal);
 
-    document.getElementById("album-back-button")?.addEventListener("click",(ev) => {
+    document.getElementById("album-back-button")?.addEventListener("click",() => {
         let albumContainer = document.getElementById("albumContainer") as HTMLDivElement;
         for(let i = 2; i < albumContainer.children.length; i++){
             albumContainer.children[i].remove();
@@ -133,8 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchAlbums();
     });
 
-    document.getElementById("image-modal-removeFromAlbum")?.addEventListener("click", async (ev) => {
-        const album = (document.getElementById("albumName")?.children[1] as HTMLParagraphElement).innerText;
+    document.getElementById("image-modal-removeFromAlbum")?.addEventListener("click", async () => {
         const imageID = (document.getElementById("image-modal-image") as HTMLImageElement).alt.split("-")[1];
         const albumID = (document.getElementById("albumName")?.children[1] as HTMLParagraphElement).id.split("-")[1];
         try {
