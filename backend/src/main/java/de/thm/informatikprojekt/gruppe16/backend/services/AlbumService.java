@@ -2,7 +2,6 @@ package de.thm.informatikprojekt.gruppe16.backend.services;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.jdbcclient.JDBCPool;
@@ -108,16 +107,16 @@ public class AlbumService {
                     tagFutures.add(tagFuture);
                 }
 
-                return Future.succeededFuture(tagFutures).compose(futures -> {
-                    CompositeFuture.all(futures).onComplete(ar -> {
-                        if (ar.succeeded()) {
-                            albumList.sort((a, b) -> Integer.compare(b.getInteger("album_id"), a.getInteger("album_id")));
-                            for (JsonObject album : albumList) {
-                                ja.add(album);
-                            }
+                return CompositeFuture.all(tagFutures).compose(ar -> {
+                    if (ar.succeeded()) {
+                        albumList.sort((a, b) -> Integer.compare(b.getInteger("album_id"), a.getInteger("album_id")));
+                        for (JsonObject album : albumList) {
+                            ja.add(album);
                         }
-                    });
-                    return Future.succeededFuture(ja);
+                        return Future.succeededFuture(ja);
+                    } else {
+                        return Future.failedFuture("Failed to fetch tags");
+                    }
                 });
             });
     }
@@ -135,7 +134,7 @@ public class AlbumService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         return pool
-            .preparedQuery("SELECT * FROM photo JOIN fotoapplication.albumfoto ON photo.photo_id = albumfoto.photo_id WHERE user = ? AND album_id = ? ORDER BY photo.photo_id DESC")
+            .preparedQuery("SELECT * FROM photo JOIN fotoapplication.albumfoto ON photo.photo_id = albumfoto.photo_id WHERE username = ? AND album_id = ? ORDER BY photo.photo_id DESC")
             .execute(Tuple.of(username, albumId))
             .compose(rows -> {
                 List<Future> tagFutures = new ArrayList<>();
@@ -166,16 +165,16 @@ public class AlbumService {
                     tagFutures.add(tagFuture);
                 }
 
-                return Future.succeededFuture(tagFutures).compose(futures -> {
-                    CompositeFuture.all(futures).onComplete(ar -> {
-                        if (ar.succeeded()) {
-                            photoList.sort((a, b) -> Integer.compare(b.getInteger("photo_id"), a.getInteger("photo_id")));
-                            for (JsonObject photo : photoList) {
-                                photosArray.add(photo);
-                            }
+                return CompositeFuture.all(tagFutures).compose(ar -> {
+                    if (ar.succeeded()) {
+                        photoList.sort((a, b) -> Integer.compare(b.getInteger("photo_id"), a.getInteger("photo_id")));
+                        for (JsonObject picture : photoList) {
+                            photosArray.add(picture);
                         }
-                    });
-                    return Future.succeededFuture(photosArray);
+                        return Future.succeededFuture(photosArray);
+                    } else {
+                        return Future.failedFuture("Failed to fetch tags");
+                    }
                 });
             });
     }
@@ -227,5 +226,143 @@ public class AlbumService {
                     )
             )
         ).onFailure(Future::failedFuture);
+    }
+
+
+    public Future<Void> addTagsToAlbum(String albumId, String tags, String username) {
+        if (albumId == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No albumId found!").encode());
+        }
+        if (tags == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No tags found!").encode());
+        }
+        if (username == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No user found!").encode());
+        }
+
+        return pool.preparedQuery("SELECT 1 FROM album WHERE album_id = ? AND username = ?")
+            .execute(Tuple.of(albumId, username))
+            .compose(rows -> {
+                if (rows.size() == 0) {
+                    return Future.failedFuture("Album not found or user not authorized");
+                }
+                return Future.succeededFuture();
+            })
+            .compose(v -> pool.preparedQuery("DELETE FROM albumtags WHERE album_id = ?")
+                .execute(Tuple.of(albumId)))
+            .compose(v -> {
+                String[] tagsArray = tags.split(" ");
+                List<Tuple> batch = new ArrayList<>();
+                for (String tag : tagsArray) {
+                    batch.add(Tuple.of(albumId, tag));
+                }
+                return pool.preparedQuery("INSERT INTO albumtags (album_id, tag) VALUES (?, ?)")
+                    .executeBatch(batch)
+                    .mapEmpty();
+            });
+
+    }
+
+
+    public Future<Void> updateAlbumMetadata(String username, String albumId, JsonObject body) {
+        if (albumId == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No albumId found!").encode());
+        }
+        if (body == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No body found!").encode());
+        }
+
+        List<Object> updateParams = new ArrayList<>();
+        StringBuilder updateQuery = new StringBuilder("UPDATE album SET");
+
+        if (body.containsKey("title")) {
+            updateQuery.append(" title = ?,");
+            updateParams.add(body.getString("title"));
+        }
+
+        if (body.containsKey("date")) {
+            updateQuery.append(" date = ?,");
+            updateParams.add(LocalDate.parse(body.getString("date")));
+        }
+
+        if (updateParams.isEmpty() && !body.containsKey("tags")) {
+            return Future.failedFuture("No fields to update");
+        }
+
+        if (updateQuery.charAt(updateQuery.length() - 1) == ',') {
+            updateQuery.deleteCharAt(updateQuery.length() - 1);
+        }
+
+        updateQuery.append(" WHERE album_id = ? AND username = ?");
+        updateParams.add(albumId);
+        updateParams.add(username);
+
+        Future<Void> updateAlbumFuture = pool
+            .preparedQuery(updateQuery.toString())
+            .execute(Tuple.wrap(updateParams.toArray()))
+            .compose(rows -> {
+                if (rows.rowCount() == 0) {
+                    return Future.failedFuture("Album not found or user not authorized");
+                }
+                return Future.succeededFuture();
+            });
+
+        if (body.containsKey("tags")) {
+            String[] tagsArray = body.getString("tags").split(" ");
+            List<Tuple> batch = new ArrayList<>();
+            for (String tag : tagsArray) {
+                batch.add(Tuple.of(albumId, tag));
+            }
+
+            Future<Void> deleteTagsFuture = pool
+                .preparedQuery("DELETE FROM albumtags WHERE album_id = ?")
+                .execute(Tuple.of(albumId))
+                .compose(rows -> Future.succeededFuture());
+
+            updateAlbumFuture = updateAlbumFuture.compose(v -> deleteTagsFuture)
+                .compose(v -> pool
+                    .preparedQuery("INSERT INTO albumtags (album_id, tag) VALUES (?, ?)")
+                    .executeBatch(batch)
+                    .compose(rows -> Future.succeededFuture())
+                );
+        }
+
+        return updateAlbumFuture;
+    }
+
+
+    public Future<Void> addPictureToAlbum(String albumId, String pictureId, String username) {
+        if (albumId == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No albumId found!").encode());
+        }
+        if (pictureId == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No pictureId found!").encode());
+        }
+        if (username == null) {
+            return Future.failedFuture(new JsonObject().put("error", "No user found!").encode());
+        }
+
+        return checkAlbumOwnership(albumId, username)
+            .compose(v -> {
+                if(v){
+                    return pool
+                        .preparedQuery("SELECT 1 FROM photo WHERE photo_id = ? AND username = ?")
+                        .execute(Tuple.of(pictureId, username));
+                }else{
+                    return Future.failedFuture("Album not found or user not authorized");
+                }
+            })
+            .compose(photoRows -> {
+                if (photoRows.size() == 0) {
+                    return Future.failedFuture("Picture not found or user not authorized");
+                }
+                return Future.succeededFuture(true);
+            })
+            .compose(v ->
+                pool
+                    .preparedQuery("INSERT INTO albumfoto (album_id, photo_id) VALUES (?, ?)")
+                    .execute(Tuple.of(albumId, pictureId))
+                    .mapEmpty());
+
     }
 }

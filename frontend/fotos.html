@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Fotoalbum</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="style/search.css" rel="stylesheet">
     <script src="src/js/sharedFunctions.js"></script>
     <script src="src/js/fotos.js"></script>
 </head>
@@ -15,9 +16,9 @@
                 <img alt="Logo" src="Logo2.png" height="50" width="50"/>
             </a>
         </div>
-        <div class="d-inline-block align-middle position-relative align-" style="top: 20%">
+        <div class="d-inline-block align-middle position-relative" style="top: 20%">
             <div class="d-flex flex-wrap align-items-center justify-content-end justify-content-lg-end">
-                <form class="col-13 col-lg-auto mb-3 mb-lg-0 me-lg-3" id="searchForm" role="search" style="width: 60vw; padding-left: 15vw;">
+                <form class="col-13 col-lg-auto mb-3 mb-lg-0 me-lg-3 searchbar" id="searchForm" role="search" style="width: 60vw; padding-left: 15vw;max-width: 1200px">
                     <input type="search" id="search" class="form-control" placeholder="Search..." aria-label="Search">
                 </form>
                 <a id="user" href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
@@ -64,7 +65,7 @@
             </li>
         </ul>
     </div>
-    <main id="main">
+    <main id="main" class="overflow-x-scroll">
         <div id="imageContainer" class="d-flex flex-row flex-wrap">
             <div id="BlankImageDiv" class="d-none p-3">
                 <div class="btn-group position-absolute" aria-label="Basic checkbox toggle button group">

@@ -1,7 +1,6 @@
 package de.thm.informatikprojekt.gruppe16.backend.router;
 
 import de.thm.informatikprojekt.gruppe16.backend.handler.PictureHandler;
-import de.thm.informatikprojekt.gruppe16.backend.handler.UserHandler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 

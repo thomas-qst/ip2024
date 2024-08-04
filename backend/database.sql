@@ -20,8 +20,8 @@ CREATE TABLE Photo (
     title VARCHAR(32) NOT NULL,
     photo LONGTEXT NOT NULL,
     date date NOT NULL,
-    user VARCHAR(32) NOT NULL,
-    FOREIGN KEY (user) references User(username)
+    username VARCHAR(32) NOT NULL,
+    FOREIGN KEY (username) references User(username)
 );
 
 CREATE TABLE PhotoTags(

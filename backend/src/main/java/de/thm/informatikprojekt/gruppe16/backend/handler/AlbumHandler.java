@@ -10,12 +10,10 @@ import de.thm.informatikprojekt.gruppe16.backend.services.AlbumService;
 import java.time.LocalDate;
 
 public class AlbumHandler {
-    private final Vertx vertx;
     private final AlbumService albumServices;
 
 
     public AlbumHandler(Vertx vertx) {
-        this.vertx = vertx;
         this.albumServices = new AlbumService(IJDBCConnection.initConnection(vertx));
     }
 
@@ -69,7 +67,7 @@ public class AlbumHandler {
             return;
         }
 
-        albumServices.getPicturesFromAlbum(albumId, username).onComplete(result -> {
+        albumServices.getPicturesFromAlbum(username, albumId).onComplete(result -> {
             if (result.succeeded()) {
                 ctx.response()
                     .putHeader("content-type", "application/json")
@@ -179,7 +177,7 @@ public class AlbumHandler {
             return;
         }
 
-        final String title = (String) jObj.getString("title");
+        final String title = jObj.getString("title");
         final LocalDate date = LocalDate.now();
         String username = ctx.session().get("user");
 
@@ -214,14 +212,140 @@ public class AlbumHandler {
     }
 
     public void handleAddTagsToAlbum(RoutingContext ctx) {
-        //TODO: reimplement function
+        String albumId = ctx.request().getParam("album_id");
+        String username = ctx.session().get("user");
+
+        if (username == null || username.isEmpty()) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(401)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+            return;
+        }
+
+        JsonObject jObj = ctx.getBodyAsJson();
+        if (jObj == null || !jObj.containsKey("tags")) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(400)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON or missing tags")));
+            return;
+        }
+
+        String tags = jObj.getString("tags");
+        if (tags == null || tags.isEmpty()) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(400)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Tags cannot be empty")));
+            return;
+        }
+
+        albumServices.addTagsToAlbum(albumId, tags, username)
+            .onSuccess(v -> {
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(200)
+                    .end(Json.encodePrettily(new JsonObject().put("success", "Tags added to album")));
+            })
+            .onFailure(e -> {
+                String errorMessage = e.getMessage();
+                if ("Album not found or user not authorized".equals(errorMessage)) {
+                    ctx.response()
+                        .putHeader("content-type", "application/json")
+                        .setStatusCode(404)
+                        .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+                } else {
+                    e.printStackTrace();
+                    ctx.response()
+                        .putHeader("content-type", "application/json")
+                        .setStatusCode(500)
+                        .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+                }
+            });
+
+
     }
 
     public void handleUpdateAlbumMetadata(RoutingContext ctx) {
-        //TODO: reimplement function
+        String albumId = ctx.request().getParam("album_id");
+        String username = ctx.session().get("user");
+
+        if (username == null || username.isEmpty()) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(401)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+            return;
+        }
+
+        JsonObject jObj = ctx.getBodyAsJson();
+        if (jObj == null) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(400)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Invalid JSON")));
+            return;
+        }
+
+        albumServices.updateAlbumMetadata(username, albumId, jObj).onComplete(ar -> {
+            if (ar.succeeded()) {
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(200)
+                    .end(Json.encodePrettily(new JsonObject().put("success", "Album metadata updated")));
+            } else if ("Album not found or user not authorized".equals(ar.cause().getMessage())) {
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(404)
+                    .end(Json.encodePrettily(new JsonObject().put("error", ar.cause().getMessage())));
+            } else {
+                ar.cause().printStackTrace();
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(500)
+                    .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+            }
+        });
+
     }
 
     public void handleAddPictureToAlbum(RoutingContext ctx) {
-        //TODO: reimplement function
+        String albumId = ctx.request().getParam("album_id");
+        String pictureId = ctx.request().getParam("picture_id");
+        String username = ctx.session().get("user");
+
+        if (username == null || username.isEmpty()) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(401)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+            return;
+        }
+
+
+        albumServices.addPictureToAlbum(albumId, pictureId, username).onComplete(ar -> {
+            if (ar.succeeded()) {
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(201)
+                    .end(Json.encodePrettily(new JsonObject().put("success", "Picture added to album")));
+            } else {
+                String errorMessage = ar.cause().getMessage();
+                if ("Album not found or user not authorized".equals(errorMessage) ||
+                    "Picture not found or user not authorized".equals(errorMessage)) {
+                    ctx.response()
+                        .putHeader("content-type", "application/json")
+                        .setStatusCode(404)
+                        .end(Json.encodePrettily(new JsonObject().put("error", errorMessage)));
+                } else {
+                    ar.cause().printStackTrace();
+                    ctx.response()
+                        .putHeader("content-type", "application/json")
+                        .setStatusCode(500)
+                        .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+                }
+            }
+        });
     }
 }

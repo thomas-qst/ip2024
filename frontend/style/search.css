@@ -1,0 +1,6 @@
+@media (min-width: 1500px) {
+    .searchbar {
+    padding-left: 250px !important;
+        width: 1150px !important;
+    }
+}

@@ -106,8 +106,8 @@ function imageDivLeave(ev, album) {
     }
 }
 function fetchAlbums() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        var _a;
         try {
             const res = yield fetch("http://localhost:8888/albums", {
                 method: 'GET',
@@ -207,8 +207,8 @@ function fetchAlbums() {
  * @returns empty promise
  */
 function fetchImages(ev, album) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b;
         let res;
         let data;
         let container;
@@ -437,8 +437,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
 });
 function deleteUser(ev) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b;
         const username = ev.target.id.split("-")[3];
         try {
             let res = yield fetch("http://localhost:8888/users/" + username, {
@@ -563,8 +563,8 @@ function addTag(ev, album) {
  * @param {boolean}[album]
  */
 function saveMetadata(ev, album) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b;
         let type = "image";
         let url = "http://localhost:8888/pictures/";
         if (album) {

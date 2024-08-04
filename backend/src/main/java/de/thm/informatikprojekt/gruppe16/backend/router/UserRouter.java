@@ -15,8 +15,8 @@ public class UserRouter {
     }
 
     public void route(Router router) {
-        router.post("/users").handler(userHandler::addUser);
-        router.delete("/users/:username").handler(userHandler::deleteUser);
-        router.get("/users").handler(userHandler::getUsers);
+        router.post("/users").handler(userHandler::handleAddUser);
+        router.delete("/users/:username").handler(userHandler::handleDeleteUser);
+        router.get("/users").handler(userHandler::handleGetUsers);
     }
 }

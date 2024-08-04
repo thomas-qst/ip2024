@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                 const albumId = data.album_id;
                 if (tags.length != 0) {
                     try {
-                        const res = yield fetch("http://localhost:8888/tags/albums/" + albumId, {
+                        const res = yield fetch("http://localhost:8888/albums/" + albumId + "/tags", {
                             method: "put",
                             mode: "cors",
                             headers: {
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         modalDate.children[1].textContent = metadata.children[1].innerHTML;
         modalTags.innerHTML = modalTags.innerHTML + metadata.children[2].innerHTML;
     });
-    (_g = document.getElementById("album-modal")) === null || _g === void 0 ? void 0 : _g.addEventListener("hide.bs.modal", (ev) => {
+    (_g = document.getElementById("album-modal")) === null || _g === void 0 ? void 0 : _g.addEventListener("hide.bs.modal", () => {
         var _a;
         const tagsDiv = document.getElementById("album-modal-tags");
         tagsDiv.innerHTML = "<h3>Tags</h3>";
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
     }
     (_j = document.getElementById("album-modal-delete")) === null || _j === void 0 ? void 0 : _j.addEventListener("click", deleteAlbum);
     (_k = document.getElementById("image-modal")) === null || _k === void 0 ? void 0 : _k.addEventListener("show.bs.modal", insertImageDataToModal);
-    (_l = document.getElementById("album-back-button")) === null || _l === void 0 ? void 0 : _l.addEventListener("click", (ev) => {
+    (_l = document.getElementById("album-back-button")) === null || _l === void 0 ? void 0 : _l.addEventListener("click", () => {
         let albumContainer = document.getElementById("albumContainer");
         for (let i = 2; i < albumContainer.children.length; i++) {
             albumContainer.children[i].remove();
@@ -130,11 +130,10 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         albumName.classList.add("d-none");
         fetchAlbums();
     });
-    (_m = document.getElementById("image-modal-removeFromAlbum")) === null || _m === void 0 ? void 0 : _m.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
-        var _q, _r, _s, _t;
-        const album = ((_q = document.getElementById("albumName")) === null || _q === void 0 ? void 0 : _q.children[1]).innerText;
+    (_m = document.getElementById("image-modal-removeFromAlbum")) === null || _m === void 0 ? void 0 : _m.addEventListener("click", () => __awaiter(void 0, void 0, void 0, function* () {
+        var _q, _r, _s;
         const imageID = document.getElementById("image-modal-image").alt.split("-")[1];
-        const albumID = ((_r = document.getElementById("albumName")) === null || _r === void 0 ? void 0 : _r.children[1]).id.split("-")[1];
+        const albumID = ((_q = document.getElementById("albumName")) === null || _q === void 0 ? void 0 : _q.children[1]).id.split("-")[1];
         try {
             const res = yield fetch("http://localhost:8888/albums/" + albumID + "/" + imageID, {
                 method: "delete",
@@ -146,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             });
             const data = yield res.json();
             if (res.ok) {
-                (_s = document.getElementById("image-modal-close")) === null || _s === void 0 ? void 0 : _s.click();
-                (_t = document.getElementById("imageDiv-" + imageID)) === null || _t === void 0 ? void 0 : _t.remove();
+                (_r = document.getElementById("image-modal-close")) === null || _r === void 0 ? void 0 : _r.click();
+                (_s = document.getElementById("imageDiv-" + imageID)) === null || _s === void 0 ? void 0 : _s.remove();
             }
         }
         catch (e) {
@@ -162,8 +161,8 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
  * @param {boolean}[multiple]
  */
 function deleteAlbum(ev, multiple) {
+    var _a, _b, _c, _d, _e, _f;
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f;
         if (multiple === undefined || !multiple) {
             const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
             const albumId = image.alt.split("-")[1];

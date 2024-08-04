@@ -45,15 +45,12 @@ public class MainVerticle extends AbstractVerticle {
         router.route().handler(BodyHandler.create());
 
 
-        // Register User routes
         UserRouter userRouter = new UserRouter(vertx);
         userRouter.route(router);
 
-        // Register Album routes
         AlbumRouter albumRouter = new AlbumRouter(vertx);
         albumRouter.route(router);
 
-        // Register Picture routes
         PictureRouter pictureRouter = new PictureRouter(vertx);
         pictureRouter.route(router);
 
