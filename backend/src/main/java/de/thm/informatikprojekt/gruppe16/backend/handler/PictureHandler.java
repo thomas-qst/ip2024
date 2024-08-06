@@ -12,6 +12,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>Handler class for Picture</p>
+ * <p>used to handle all functions related to pictures</p>
+ * <p>only contains Vertx logic, all database logic is located in {@link de.thm.informatikprojekt.gruppe16.backend.services.PictureService}</p>
+ */
 public class PictureHandler {
     private final PictureService pictureServices;
 
@@ -19,13 +24,22 @@ public class PictureHandler {
         this.pictureServices = new PictureService(IJDBCConnection.initConnection(vertx));
     }
 
+    /**
+     * <p>Uses addPicture from {@link de.thm.informatikprojekt.gruppe16.backend.services.PictureService} to add one picture and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 400 - Failed to add Image. Missing Arguments</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 201 - Photo added to Database + photo ID</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void HandleAddPicture(RoutingContext ctx) {
         String username = ctx.session().get("user");
         if (username == null || username.isEmpty()) {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in")));
         }
         JsonObject jObj = ctx.getBodyAsJson();
         if (jObj == null) {
@@ -69,6 +83,14 @@ public class PictureHandler {
 
     }
 
+    /**
+     * <p>Uses deletePicture from {@link de.thm.informatikprojekt.gruppe16.backend.services.PictureService} to delete one picture and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 404 - Picture not found or user not authorized</p>
+     * <p>Status Code 204 - Picture deleted</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void HandleDeletePictures(RoutingContext ctx) {
         String contextUsername = ctx.session().get("user");
         String pictureId = ctx.pathParam("picture_id");
@@ -83,16 +105,16 @@ public class PictureHandler {
 
         contextUsername = contextUsername.replaceAll("\\s+", "");
 
-        pictureServices.deletePicture(pictureId, contextUsername)
+        pictureServices.deletePicture(contextUsername, pictureId)
             .onSuccess(v -> {
                 ctx.response()
                     .putHeader("content-type", "application/json")
-                    .setStatusCode(200)
+                    .setStatusCode(204)
                     .end(Json.encodePrettily(new JsonObject().put("success", "Picture deleted")));
             })
             .onFailure(e -> {
                 String errorMessage = e.getMessage();
-                if ("Picture not found or user not authorized".equals(errorMessage)) {
+                if ("Picture not found or username not authorized".equals(errorMessage)) {
                     ctx.response()
                         .putHeader("content-type", "application/json")
                         .setStatusCode(404)
@@ -108,6 +130,13 @@ public class PictureHandler {
 
     }
 
+    /**
+     * <p>Uses getPictures from {@link de.thm.informatikprojekt.gruppe16.backend.services.PictureService} to get all picture from the current user and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 200 - Picture found + Pictures</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void HandleGetPictures(RoutingContext ctx) {
         String username = ctx.session().get("user");
 
@@ -139,6 +168,15 @@ public class PictureHandler {
 
     }
 
+    /**
+     * <p>Uses addTagsToPicture from {@link de.thm.informatikprojekt.gruppe16.backend.services.PictureService} to add tags to one picture and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 404 - Picture not found or user not authorized</p>
+     * <p>Status Code 201 - Tags added to database</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void HandleAddTagsToPicture(RoutingContext ctx) {
         String pictureId = ctx.request().getParam("picture_id");
         String username = ctx.session().get("user");
@@ -146,7 +184,7 @@ public class PictureHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
             return;
         }
         JsonObject jObj = ctx.getBodyAsJson();
@@ -171,20 +209,36 @@ public class PictureHandler {
             batch.add(Tuple.of(pictureId, tag));
         }
 
-        pictureServices.addTagsToPicture(pictureId, batch)
+        pictureServices.addTagsToPicture(username, pictureId, batch)
             .onSuccess(v -> ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(201)
                 .end(Json.encodePrettily(new JsonObject().put("success", "Tags added to database"))))
             .onFailure(e -> {
-                e.printStackTrace();
-                ctx.response()
-                    .setStatusCode(500)
-                    .putHeader("content-type", "application/json")
-                    .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+                if(e.getMessage().equals("Picture not found or username not authorized")){
+                    ctx.response()
+                        .setStatusCode(404)
+                        .putHeader("content-type", "application/json")
+                        .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found or user not authorized")));
+                }else{
+                    e.printStackTrace();
+                    ctx.response()
+                        .setStatusCode(500)
+                        .putHeader("content-type", "application/json")
+                        .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
+                }
             });
     }
 
+    /**
+     * <p>Uses updatePictureMetadata from {@link de.thm.informatikprojekt.gruppe16.backend.services.PictureService} to update metadata of one picture and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 404 - Photo not found or user not authorized</p>
+     * <p>Status Code 201 - Photo metadata updated</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void HandleUpdatePictureMetadata(RoutingContext ctx) {
         String pictureId = ctx.request().getParam("picture_id");
         String username = ctx.session().get("user");
@@ -193,7 +247,7 @@ public class PictureHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
             return;
         }
 
@@ -210,7 +264,7 @@ public class PictureHandler {
             if (ar.succeeded()) {
                 ctx.response()
                     .putHeader("content-type", "application/json")
-                    .setStatusCode(200)
+                    .setStatusCode(201)
                     .end(Json.encodePrettily(new JsonObject().put("success", "Photo metadata updated")));
             } else if ("Photo not found or user not authorized".equals(ar.cause().getMessage())) {
                 ctx.response()

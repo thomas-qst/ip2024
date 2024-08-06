@@ -13,6 +13,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>Service class for Picture</p>
+ * <p>used to handle all database communication related to pictures</p>
+ */
 public class PictureService {
     private final JDBCPool pool;
 
@@ -20,19 +24,45 @@ public class PictureService {
         this.pool = pool;
     }
 
-    public Future<Void> addTagsToPicture(String pictureId, List<Tuple> batch) {
+    /**
+     * Adds the tags to the picture if the user owns the picture.
+     * @param username
+     * @param pictureId
+     * @param batch
+     * @return Future Void
+     */
+    public Future<Void> addTagsToPicture(String username, String pictureId, List<Tuple> batch) {
         if(pictureId == null || pictureId.isEmpty()){
             return Future.failedFuture("Picture ID cannot be empty");
         }
         if(batch == null || batch.isEmpty()){
             return Future.failedFuture("Batch cannot be empty");
         }
+        if(username == null || username.isEmpty()){
+            return Future.failedFuture("Username cannot be empty");
+        }
 
-        return pool.preparedQuery("INSERT INTO phototags (photo_id, tag) VALUES (?, ?)")
-            .executeBatch(batch)
-            .mapEmpty();
+        return pool.preparedQuery("SELECT 1 FROM photo WHERE photo_id = ? AND username = ?")
+            .execute(Tuple.of(pictureId, username))
+            .compose(v -> {
+               if(v.iterator().hasNext()){
+                   return pool.preparedQuery("INSERT INTO phototags (photo_id, tag) VALUES (?, ?)")
+                       .executeBatch(batch)
+                       .mapEmpty();
+               }else{
+                   return Future.failedFuture("Picture not found or username not authorized");
+               }
+            });
     }
 
+    /**
+     * Adds the Picture.
+     * @param username
+     * @param title
+     * @param photo
+     * @param date
+     * @return Future Integer - photo ID
+     */
     public Future<Integer> addPicture(String username, String title, String photo, LocalDate date){
         if(username == null || username.isEmpty()){
             return Future.failedFuture("User cannot be empty");
@@ -70,8 +100,12 @@ public class PictureService {
 
     }
 
-
-
+    /**
+     * Deletes the picture if the username owns the picture.
+     * @param username
+     * @param pictureId
+     * @return Future Void
+     */
     public Future<Void> deletePicture(String username, String pictureId){
         if(pictureId == null || pictureId.isEmpty()){
             return Future.failedFuture("Picture ID cannot be empty");
@@ -86,10 +120,10 @@ public class PictureService {
                 conn.preparedQuery("SELECT 1 FROM photo WHERE photo_id = ? AND username = ?")
                     .execute(Tuple.of(pictureId, username))
                     .compose(rows -> {
-                        if (rows.size() == 0) {
-                            return Future.failedFuture("Picture not found or username not authorized");
+                        if (rows.iterator().hasNext()) {
+                            return Future.succeededFuture();
                         }
-                        return Future.succeededFuture();
+                        return Future.failedFuture("Picture not found or username not authorized");
                     })
                     .compose(v -> conn.preparedQuery("DELETE FROM phototags WHERE photo_id = ?")
                         .execute(Tuple.of(pictureId)))
@@ -104,7 +138,11 @@ public class PictureService {
         );
     }
 
-
+    /**
+     * Gets all picture from the username.
+     * @param username
+     * @return Future JsonArray - contains the photo data
+     */
     public Future<JsonArray> getPictures(String username){
         if (username == null) {
             return Future.failedFuture(new JsonObject().put("error", "No username found!").encode());
@@ -157,6 +195,13 @@ public class PictureService {
             });
     }
 
+    /**
+     * Updates the picture metadata given in the body if the username owns the picture.
+     * @param username
+     * @param photoId
+     * @param body Json request body
+     * @return Future Void
+     */
     public Future<Void> updatePictureMetadata(String username, String photoId, JsonObject body) {
         if (photoId == null) {
             return Future.failedFuture(new JsonObject().put("error", "No photoId found!").encode());
@@ -194,7 +239,7 @@ public class PictureService {
             .preparedQuery(updateQuery.toString())
             .execute(Tuple.wrap(updateParams.toArray()))
             .compose(rows -> {
-                if (rows.rowCount() == 0) {
+                if (!rows.iterator().hasNext()) {
                     return Future.failedFuture("Photo not found or user not authorized");
                 }
                 return Future.succeededFuture();

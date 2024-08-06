@@ -1,13 +1,16 @@
 package de.thm.informatikprojekt.gruppe16.backend.services;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import org.mindrot.jbcrypt.BCrypt;
 
+/**
+ * <p>Service class for Login</p>
+ * <p>used to handle all database communication related to logins</p>
+ */
 public class LoginService {
     private final JDBCPool pool;
 
@@ -15,25 +18,32 @@ public class LoginService {
         this.pool = pool;
     }
 
-    public Future<JsonObject> getUsernameFromSession(String username) {
-        // TODO: Überprüfen, ob der Benutzer noch in der Datenbank existiert
-        if (username != null) {
-            JsonArray ja = new JsonArray();
-            JsonObject jo = new JsonObject();
-            jo.put("username", username);
-            ja.add(jo);
-
-            JsonObject response = new JsonObject()
-                .put("success", "User found in session")
-                .put("data", ja);
-            return Future.succeededFuture(response);
-        } else {
-            JsonObject response = new JsonObject()
-                .put("error", "No User found in session");
-            return Future.failedFuture(response.encode());
+    /**
+     * Checks if the given username still exists in the database
+     * @param username
+     * @return Future JsonObject
+     */
+    public Future<String> getUsernameFromSession(String username) {
+        if(username == null || username.isEmpty()) {
+            return Future.failedFuture("Username cannot be null or empty");
         }
+
+        return pool.preparedQuery("SELECT 1 from user where username = ?")
+            .execute(Tuple.of(username))
+            .compose(v -> {
+                if(v.rowCount() == 0){
+                    return Future.failedFuture("User does not exist");
+                }
+                return Future.succeededFuture(username);
+            });
     }
 
+    /**
+     * Checks if the password and username are correct
+     * @param username
+     * @param password
+     * @return Future Boolean - false -> OTP; true -> normal login
+     */
     public Future<Boolean> login(String username, String password) {
         if(username == null){
             return Future.failedFuture("Username is null");
@@ -64,6 +74,12 @@ public class LoginService {
 
     }
 
+    /**
+     * Changes the password of the given user to the given password and sets one_time_password = false
+     * @param username
+     * @param password
+     * @return Future Void
+     */
     public Future<Void> changePassword(String username, String password) {
         if(username == null){
             return Future.failedFuture("Username is null");

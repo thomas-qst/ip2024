@@ -5,7 +5,6 @@ import de.thm.informatikprojekt.gruppe16.backend.router.LoginRouter;
 import de.thm.informatikprojekt.gruppe16.backend.router.PictureRouter;
 import de.thm.informatikprojekt.gruppe16.backend.router.UserRouter;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
@@ -17,9 +16,18 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 import java.util.HashSet;
 import java.util.Set;
 
-
+/**
+ * Verticle which is used as the main class.
+ * Adds CORS and uses Router classes for routing.
+ * Starts the Server.
+ */
 public class MainVerticle extends AbstractVerticle {
 
+    /**
+     * Function executed at start of the verticle.
+     * @param startPromise given by Vertx
+     * @throws Exception throws by Vertx
+     */
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         Router router = Router.router(vertx);

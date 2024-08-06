@@ -7,6 +7,10 @@ import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
+/**
+ * <p>Service class for User</p>
+ * <p>used to handle all database communication related to users</p>
+ */
 public class UserService {
     private final JDBCPool pool;
 
@@ -14,6 +18,13 @@ public class UserService {
         this.pool = pool;
     }
 
+    /**
+     * Adds the user.
+     * @param username
+     * @param password
+     * @param otp
+     * @return Future Void
+     */
     public Future<Void> addUser(String username, String password, boolean otp) {
         if(username == null){
             return Future.failedFuture("Username cannot be null");
@@ -38,6 +49,11 @@ public class UserService {
             });
     }
 
+    /**
+     * Deletes the user and everything the user owns.
+     * @param usernameToDelete
+     * @return Future Void
+     */
     public Future<Void> deleteUser(String usernameToDelete) {
 
         if(usernameToDelete == null){
@@ -72,7 +88,10 @@ public class UserService {
         });
     }
 
-
+    /**
+     * Gets all users except the Admin user.
+     * @return Future JsonArray - contains all usernames
+     */
     public Future<JsonArray> getUsers() {
         JsonArray resultArray = new JsonArray();
         return pool

@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 errorElement?.classList.remove("d-none");
                 return;
             }
-            console.log(event.dataTransfer.files);
         }
         event.preventDefault();
     });
@@ -117,7 +116,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 credentials: "include",
                                 body: JSON.stringify({"tags": tags})
                             });
-                            const data = await res.json();
                             if(res.ok){
                                 document.getElementById("upload-modal-close")?.click();
                                 window.location.reload();
@@ -164,7 +162,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById("addToAlbum-modal")?.addEventListener("show.bs.modal",async (event) => {
-        console.log("Added to Album: ", event);
         try{
             const res = await fetch("http://localhost:8888/albums", {
                 method: "GET",
@@ -242,7 +239,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             },
                         credentials: "include",
                     });
-                    const data = await res.json();
                     if(res.status != 201){
                         console.error("Failed to added images to albums");
                         return;
@@ -257,6 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         selectedAlbum = [];
         (document.querySelector("#addToAlbum-modal-close") as HTMLButtonElement).click();
+        (document.querySelector('#cancelSelect') as HTMLButtonElement).click();
     });
 
 
@@ -274,7 +271,6 @@ async function deleteImages(ev:Event,multiple?:boolean){
     if(multiple === undefined || !multiple){
         const image = (ev.target as HTMLButtonElement).parentElement?.parentElement?.children[1].children[0] as HTMLImageElement;
         const imageId = image.alt.split("-")[1];
-        console.log(imageId);
         try{
             const res : Response = await fetch("http://localhost:8888/pictures/"+imageId, {
                 method: 'delete',
@@ -284,8 +280,7 @@ async function deleteImages(ev:Event,multiple?:boolean){
                 },
                 credentials: "include"
             });
-            const data = await res.json();
-            if(res.status == 200){
+            if(res.status == 204){
                 let closeButton = (ev.target as HTMLButtonElement).parentElement?.children[3] as HTMLButtonElement;
                 closeButton.click();
                 document.getElementById("imageDiv-"+imageId)?.remove();
@@ -304,7 +299,6 @@ async function deleteImages(ev:Event,multiple?:boolean){
                     },
                     credentials: "include"
                 });
-                const data = await res.json();
                 if(res.status == 200){
                     document.getElementById("imageDiv-"+imageId)?.remove();
                 }

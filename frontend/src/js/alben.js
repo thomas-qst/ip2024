@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                             credentials: "include",
                             body: JSON.stringify({ "tags": tags })
                         });
-                        const data = yield res.json();
                         if (res.ok) {
                             (_o = document.getElementById("upload-modal-close")) === null || _o === void 0 ? void 0 : _o.click();
                             window.location.reload();
@@ -83,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         const imageDiv = ev.relatedTarget.parentElement;
         const metadata = imageDiv.children[3];
         const img = (_b = (_a = ev.relatedTarget.previousElementSibling) === null || _a === void 0 ? void 0 : _a.previousElementSibling) === null || _b === void 0 ? void 0 : _b.previousElementSibling;
-        console.log(img);
         const modalTags = document.getElementById("album-modal-tags");
         let modalImage = document.getElementById("album-modal-image");
         modalImage.alt = img.id;
@@ -143,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                 },
                 credentials: "include"
             });
-            const data = yield res.json();
             if (res.ok) {
                 (_r = document.getElementById("image-modal-close")) === null || _r === void 0 ? void 0 : _r.click();
                 (_s = document.getElementById("imageDiv-" + imageID)) === null || _s === void 0 ? void 0 : _s.remove();
@@ -166,7 +163,6 @@ function deleteAlbum(ev, multiple) {
         if (multiple === undefined || !multiple) {
             const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
             const albumId = image.alt.split("-")[1];
-            console.log(albumId);
             try {
                 const res = yield fetch("http://localhost:8888/albums/" + albumId, {
                     method: 'delete',
@@ -176,9 +172,8 @@ function deleteAlbum(ev, multiple) {
                     },
                     credentials: "include"
                 });
-                const data = yield res.json();
-                if (res.status == 200) {
-                    let closeButton = (_c = ev.target.parentElement) === null || _c === void 0 ? void 0 : _c.children[3];
+                if (res.status == 204) {
+                    let closeButton = (_c = ev.target.parentElement) === null || _c === void 0 ? void 0 : _c.children[2];
                     closeButton.click();
                     (_d = document.getElementById("albumDiv-" + albumId)) === null || _d === void 0 ? void 0 : _d.remove();
                 }
@@ -198,8 +193,7 @@ function deleteAlbum(ev, multiple) {
                         },
                         credentials: "include"
                     });
-                    const data = yield res.json();
-                    if (res.status == 200) {
+                    if (res.status == 204) {
                         (_e = document.getElementById("albumDiv-" + albumId)) === null || _e === void 0 ? void 0 : _e.remove();
                     }
                 }

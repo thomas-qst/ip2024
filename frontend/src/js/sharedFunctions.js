@@ -449,8 +449,7 @@ function deleteUser(ev) {
                 },
                 credentials: "include"
             });
-            let data = yield res.json();
-            if (res.status == 200) {
+            if (res.status == 204) {
                 (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.remove();
             }
         }
@@ -595,7 +594,7 @@ function saveMetadata(ev, album) {
                 body: JSON.stringify({ "title": title, "date": date, "tags": tag })
             });
             const data = yield res.json();
-            if (res.status == 200) {
+            if (res.status == 201) {
                 window.location.reload();
             }
         }
@@ -630,12 +629,8 @@ function search(ev) {
     let metadataIndex = 2;
     let childIndex = 0;
     let startIndex = 1;
-    let isAlbum = false;
-    let isInAlbum = false;
     if (ev.target.id.startsWith("album")) {
-        isAlbum = true;
         if (((_a = document.getElementById("albumName")) === null || _a === void 0 ? void 0 : _a.children[1]).innerText !== "") {
-            isInAlbum = true;
             startIndex = 2;
             childIndex = 1;
         }

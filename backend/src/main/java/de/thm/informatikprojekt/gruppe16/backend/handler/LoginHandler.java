@@ -4,10 +4,16 @@ import de.thm.informatikprojekt.gruppe16.backend.services.LoginService;
 import de.thm.informatikprojekt.gruppe16.backend.utils.IJDBCConnection;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.mindrot.jbcrypt.BCrypt;
 
+/**
+ * <p>Handler class for Login</p>
+ * <p>used to handle all functions related to login</p>
+ * <p>only contains Vertx logic, all database logic is located in {@link de.thm.informatikprojekt.gruppe16.backend.services.LoginService}</p>
+ */
 public class LoginHandler {
     private final LoginService loginServices;
 
@@ -15,25 +21,50 @@ public class LoginHandler {
         loginServices = new LoginService(IJDBCConnection.initConnection(vertx));
     }
 
+    /**
+     * <p>Uses getUsernameFromSession from {@link de.thm.informatikprojekt.gruppe16.backend.services.LoginService} to get the current Username from the current session and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 404 - No User found in session</p>
+     * <p>Status Code 404 - User does not exist</p>
+     * <p>Status Code 200 - User found in session + Username</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleGetUsernameFromSession(RoutingContext ctx) {
         String username = ctx.session().get("user");
+        if(username == null || username.isEmpty()) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(404)
+                .end(Json.encodePrettily(new JsonObject().put("error", "Username not found")));
+            return;
+        }
 
         loginServices.getUsernameFromSession(username).onComplete(ar -> {
             if (ar.succeeded()) {
-                JsonObject result = ar.result();
                 ctx.response()
                     .putHeader("content-type", "application/json")
                     .setStatusCode(200)
-                    .end(result.encodePrettily());
-            } else {
+                    .end(Json.encodePrettily(new JsonObject().put("success", "User found in session").put("data", new JsonArray().add(new JsonObject().put("username", ar.result())))));
+            } else if(ar.cause().getMessage().equals("User does not exist")){
                 ctx.response()
                     .putHeader("content-type", "application/json")
                     .setStatusCode(404)
-                    .end(ar.cause().getMessage());
+                    .end(Json.encodePrettily(new JsonObject().put("error", ar.cause().getMessage())));
+            } else{
+                ar.cause().printStackTrace();
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(500)
+                    .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
             }
         });
     }
 
+    /**
+     * <p>Deletes the current session</p>
+     * <p>Status Code 204</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleDeleteSession(RoutingContext ctx) {
         ctx.session().destroy();
         ctx.response()
@@ -42,6 +73,16 @@ public class LoginHandler {
             .end();
     }
 
+    /**
+     * <p>Uses login from {@link de.thm.informatikprojekt.gruppe16.backend.services.LoginService} to add the user to the session and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 400 - Failed to add User. Missing Arguments</p>
+     * <p>Status Code 200 - User added to session, OTP detected!</p>
+     * <p>Status Code 201 - User added to session</p>
+     * <p>Status Code 404 - Wrong username or password</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleLogin(RoutingContext ctx) {
         JsonObject jObj = ctx.getBodyAsJson();
         if (jObj == null) {
@@ -79,22 +120,34 @@ public class LoginHandler {
                     .end(Json.encodePrettily(new JsonObject().put("success", "User added to session")));
             } else if (res.succeeded() && !res.result()) {
                 ctx.session().put("user", finalUsername);
-                ctx.session().put("OTP", true);
                 ctx.response()
                     .setStatusCode(200)
                     .putHeader("content-type", "application/json")
                     .end(Json.encodePrettily(new JsonObject().put("success", "User added to session, OTP detected!")));
-            } else{
+            } else if (res.failed() && res.cause().getMessage().equals("Wrong username or password")){
                 ctx.response()
                     .putHeader("content-type", "application/json")
                     .setStatusCode(404)
                     .end(Json.encodePrettily(new JsonObject().put("error", "Wrong username or password")));
+            } else {
+                ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .setStatusCode(500)
+                    .end(Json.encodePrettily(new JsonObject().put("error", "Database error")));
             }
         });
 
 
     }
 
+    /**
+     * <p>Uses changePassword from {@link de.thm.informatikprojekt.gruppe16.backend.services.LoginService} to change the password of the user in the session and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 201 - Password updated</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleChangePassword(RoutingContext ctx) {
         JsonObject jObj = ctx.getBodyAsJson();
         if (jObj == null) {
@@ -110,7 +163,8 @@ public class LoginHandler {
             ctx.response()
                 .setStatusCode(401)
                 .putHeader("content-type", "application/json")
-                .end(Json.encodePrettily(new JsonObject().put("error", "You need to be logged in")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in")));
+            return;
         }
 
         loginServices.changePassword(username,password_hash)

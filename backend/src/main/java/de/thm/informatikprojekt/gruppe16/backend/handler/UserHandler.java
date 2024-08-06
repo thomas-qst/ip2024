@@ -10,6 +10,11 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.Objects;
 
+/**
+ * <p>Handler class for User</p>
+ * <p>used to handle all functions related to users</p>
+ * <p>only contains Vertx logic, all database logic is located in {@link de.thm.informatikprojekt.gruppe16.backend.services.UserService}</p>
+ */
 public class UserHandler {
     private final UserService userServices;
 
@@ -17,6 +22,16 @@ public class UserHandler {
         this.userServices = new UserService(IJDBCConnection.initConnection(vertx));
     }
 
+    /**
+     * <p>Uses addUser from {@link de.thm.informatikprojekt.gruppe16.backend.services.UserService} to add one user and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - unauthorized</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 400 - Failed to add User. Missing Arguments</p>
+     * <p>Status Code 400 - Username already in Database</p>
+     * <p>Status Code 201 - User added to Database</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleAddUser(RoutingContext ctx) {
         String requestUser = ctx.session().get("user");
         if (!Objects.equals(requestUser, "Admin")) {
@@ -77,6 +92,16 @@ public class UserHandler {
         });
     }
 
+    /**
+     * <p>Uses deleteUser from {@link de.thm.informatikprojekt.gruppe16.backend.services.UserService} to delete one user and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Admin user cannot be deleted</p>
+     * <p>Status Code 401 - unauthorized</p>
+     * <p>Status Code 401 - Login required</p>
+     * <p>Status Code 404 - User not found</p>
+     * <p>Status Code 200 - User deleted</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleDeleteUser(RoutingContext ctx) {
         String usernameToDelete = ctx.pathParam("username");
         String requestingUser = ctx.session().get("user");
@@ -89,7 +114,7 @@ public class UserHandler {
             return;
         }
 
-        if ("Admin".equals(usernameToDelete)) {
+        if (!"Admin".equals(requestingUser)) {
             ctx.response()
                 .setStatusCode(401)
                 .putHeader("content-type", "application/json")
@@ -98,7 +123,7 @@ public class UserHandler {
 
         if("Admin".equals(usernameToDelete)) {
             ctx.response()
-                .setStatusCode(401)
+                .setStatusCode(400)
                 .putHeader("content-type", "application/json")
                 .end(Json.encodePrettily(new JsonObject().put("error", "Admin user cannot be deleted!")));
         }
@@ -108,7 +133,7 @@ public class UserHandler {
             if (ar.succeeded()) {
                 ctx.response()
                     .putHeader("content-type", "application/json")
-                    .setStatusCode(200)
+                    .setStatusCode(204)
                     .end(Json.encodePrettily(new JsonObject().put("success", "User deleted")));
             } else if (ar.cause().getMessage().equals("User not found")) {
                 ctx.response()
@@ -125,6 +150,13 @@ public class UserHandler {
         });
     }
 
+    /**
+     * <p>Uses getUsers from {@link de.thm.informatikprojekt.gruppe16.backend.services.UserService} to get all users and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - unauthorized</p>
+     * <p>Status Code 200 - Users found + Usernames</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleGetUsers(RoutingContext ctx) {
         String username = ctx.session().get("user");
         if (!"Admin".equals(username)) {

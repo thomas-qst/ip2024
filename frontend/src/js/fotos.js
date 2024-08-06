@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                 errorElement === null || errorElement === void 0 ? void 0 : errorElement.classList.remove("d-none");
                 return;
             }
-            console.log(event.dataTransfer.files);
         }
         event.preventDefault();
     });
@@ -116,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                                 credentials: "include",
                                 body: JSON.stringify({ "tags": tags })
                             });
-                            const data = yield res.json();
                             if (res.ok) {
                                 (_t = document.getElementById("upload-modal-close")) === null || _t === void 0 ? void 0 : _t.click();
                                 window.location.reload();
@@ -159,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         }
     });
     (_m = document.getElementById("addToAlbum-modal")) === null || _m === void 0 ? void 0 : _m.addEventListener("show.bs.modal", (event) => __awaiter(void 0, void 0, void 0, function* () {
-        console.log("Added to Album: ", event);
         try {
             const res = yield fetch("http://localhost:8888/albums", {
                 method: "GET",
@@ -234,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
                         },
                         credentials: "include",
                     });
-                    const data = yield res.json();
                     if (res.status != 201) {
                         console.error("Failed to added images to albums");
                         return;
@@ -250,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         }
         selectedAlbum = [];
         document.querySelector("#addToAlbum-modal-close").click();
+        document.querySelector('#cancelSelect').click();
     }));
 }));
 /**
@@ -264,7 +261,6 @@ function deleteImages(ev, multiple) {
         if (multiple === undefined || !multiple) {
             const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
             const imageId = image.alt.split("-")[1];
-            console.log(imageId);
             try {
                 const res = yield fetch("http://localhost:8888/pictures/" + imageId, {
                     method: 'delete',
@@ -274,8 +270,7 @@ function deleteImages(ev, multiple) {
                     },
                     credentials: "include"
                 });
-                const data = yield res.json();
-                if (res.status == 200) {
+                if (res.status == 204) {
                     let closeButton = (_c = ev.target.parentElement) === null || _c === void 0 ? void 0 : _c.children[3];
                     closeButton.click();
                     (_d = document.getElementById("imageDiv-" + imageId)) === null || _d === void 0 ? void 0 : _d.remove();
@@ -296,7 +291,6 @@ function deleteImages(ev, multiple) {
                         },
                         credentials: "include"
                     });
-                    const data = yield res.json();
                     if (res.status == 200) {
                         (_e = document.getElementById("imageDiv-" + imageId)) === null || _e === void 0 ? void 0 : _e.remove();
                     }

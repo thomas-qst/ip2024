@@ -9,6 +9,11 @@ import de.thm.informatikprojekt.gruppe16.backend.services.AlbumService;
 
 import java.time.LocalDate;
 
+/**
+ * <p>Handler class for Album</p>
+ * <p>used to handle all functions related to albums</p>
+ * <p>only contains Vertx logic, all database logic is located in {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService}</p>
+ */
 public class AlbumHandler {
     private final AlbumService albumServices;
 
@@ -17,6 +22,13 @@ public class AlbumHandler {
         this.albumServices = new AlbumService(IJDBCConnection.initConnection(vertx));
     }
 
+    /**
+     * <p>Uses getAlbumsByUsername from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to get all albums from one user and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 200 - Albums found + data</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleGetAlbumsByUsername(RoutingContext ctx) {
         String username = ctx.session().get("user");
 
@@ -47,6 +59,14 @@ public class AlbumHandler {
 
     }
 
+    /**
+     * <p>Uses getPicturesFromAlbum from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to get all pictures from one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 404 - No album given</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 200 - Pictures found + data</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleGetPicturesFromAlbum(RoutingContext ctx) {
         String albumId = ctx.request().getParam("album_id");
         String username = ctx.session().get("user");
@@ -63,7 +83,7 @@ public class AlbumHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "No user found!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
             return;
         }
 
@@ -82,6 +102,14 @@ public class AlbumHandler {
         });
     }
 
+    /**
+     * <p>Uses deleteAlbum from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to delete one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 404 - Album not found or user not authorized</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 204 - Album deleted</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleDeleteAlbum(RoutingContext ctx) {
         String albumId = ctx.pathParam("album_id");
         String username = ctx.session().get("user");
@@ -90,7 +118,7 @@ public class AlbumHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
             return;
         }
 
@@ -98,7 +126,7 @@ public class AlbumHandler {
             .onSuccess(v -> {
                 ctx.response()
                     .putHeader("content-type", "application/json")
-                    .setStatusCode(200)
+                    .setStatusCode(204)
                     .end(Json.encodePrettily(new JsonObject().put("success", "Album deleted")));
             })
             .onFailure(e -> {
@@ -120,6 +148,15 @@ public class AlbumHandler {
 
     }
 
+    /**
+     * <p>Uses deletePictureFromAlbum and checkAlbumOwnership from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to delete one picture from one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 404 - Picture not found in the album</p>
+     * <p>Status Code 404 - Album not found or user not authorized</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 204 - Picture removed from album</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleDeletePictureFromAlbum(RoutingContext ctx) {
         String albumId = ctx.request().getParam("album_id");
         String pictureId = ctx.request().getParam("picture_id");
@@ -129,7 +166,7 @@ public class AlbumHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
             return;
         }
 
@@ -140,7 +177,7 @@ public class AlbumHandler {
                     if (ar.result() > 0) {
                         ctx.response()
                             .putHeader("content-type", "application/json")
-                            .setStatusCode(200)
+                            .setStatusCode(204)
                             .end(Json.encodePrettily(new JsonObject().put("success", "Picture removed from album")));
                     } else {
                         ctx.response()
@@ -167,6 +204,15 @@ public class AlbumHandler {
 
     }
 
+    /**
+     * <p>Uses addAlbum from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to add one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 400 - Failed to add Album. Missing Arguments</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 201 - Album added to Database + album id</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleAddAlbum(RoutingContext ctx) {
         JsonObject jObj = ctx.getBodyAsJson();
         if (jObj == null) {
@@ -185,7 +231,15 @@ public class AlbumHandler {
             username = username.replaceAll("\\s+", "");
         }
 
-        if (username == null || username.isEmpty() || title == null || title.isEmpty()) {
+        if (username == null || username.isEmpty()) {
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .setStatusCode(401)
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in!")));
+            return;
+        }
+
+        if(title == null || title.isEmpty()){
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(400)
@@ -211,6 +265,16 @@ public class AlbumHandler {
 
     }
 
+    /**
+     * <p>Uses addTagsToAlbum from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to add tags to one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON or missing tags</p>
+     * <p>Status Code 400 - Tags cannot be empty</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 404 - Album not found or user not authorized</p>
+     * <p>Status Code 201 - Tags added to album</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleAddTagsToAlbum(RoutingContext ctx) {
         String albumId = ctx.request().getParam("album_id");
         String username = ctx.session().get("user");
@@ -219,7 +283,7 @@ public class AlbumHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in")));
             return;
         }
 
@@ -245,7 +309,7 @@ public class AlbumHandler {
             .onSuccess(v -> {
                 ctx.response()
                     .putHeader("content-type", "application/json")
-                    .setStatusCode(200)
+                    .setStatusCode(201)
                     .end(Json.encodePrettily(new JsonObject().put("success", "Tags added to album")));
             })
             .onFailure(e -> {
@@ -267,6 +331,15 @@ public class AlbumHandler {
 
     }
 
+    /**
+     * <p>Uses updateAlbumMetadata from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to change the metadata of one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 400 - Invalid JSON</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 404 - Album not found or user not authorized</p>
+     * <p>Status Code 201 - Album metadata updated</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleUpdateAlbumMetadata(RoutingContext ctx) {
         String albumId = ctx.request().getParam("album_id");
         String username = ctx.session().get("user");
@@ -275,7 +348,7 @@ public class AlbumHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in")));
             return;
         }
 
@@ -292,7 +365,7 @@ public class AlbumHandler {
             if (ar.succeeded()) {
                 ctx.response()
                     .putHeader("content-type", "application/json")
-                    .setStatusCode(200)
+                    .setStatusCode(201)
                     .end(Json.encodePrettily(new JsonObject().put("success", "Album metadata updated")));
             } else if ("Album not found or user not authorized".equals(ar.cause().getMessage())) {
                 ctx.response()
@@ -310,6 +383,15 @@ public class AlbumHandler {
 
     }
 
+    /**
+     * <p>Uses addPictureToAlbum from {@link de.thm.informatikprojekt.gruppe16.backend.services.AlbumService} to add on picture to one album and gives the appropriate response to the RoutingContext</p>
+     * <p>Status Code 401 - User is not logged in</p>
+     * <p>Status Code 404 - Album not found or user not authorized</p>
+     * <p>Status Code 404 - Picture not found or user not authorized</p>
+     * <p>Status Code 201 - Picture added to album</p>
+     * <p>Status Code 500 - Database error</p>
+     * @param ctx Vertx RoutingContext
+     */
     public void handleAddPictureToAlbum(RoutingContext ctx) {
         String albumId = ctx.request().getParam("album_id");
         String pictureId = ctx.request().getParam("picture_id");
@@ -319,7 +401,7 @@ public class AlbumHandler {
             ctx.response()
                 .putHeader("content-type", "application/json")
                 .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
+                .end(Json.encodePrettily(new JsonObject().put("error", "User is not logged in")));
             return;
         }
 

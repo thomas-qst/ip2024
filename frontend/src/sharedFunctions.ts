@@ -461,8 +461,7 @@ async function deleteUser(ev:Event){
             },
             credentials: "include"
         });
-        let data = await res.json();
-        if(res.status == 200){
+        if(res.status == 204){
             (ev.target as HTMLButtonElement).parentElement?.parentElement?.remove();
         }
     }catch(e){
@@ -611,7 +610,7 @@ async function saveMetadata(ev:Event,album?:boolean){
             body: JSON.stringify({"title": title, "date": date, "tags": tag })
         });
         const data = await res.json();
-        if(res.status == 200){
+        if(res.status == 201){
             window.location.reload();
         }
     }catch(err){
@@ -645,12 +644,8 @@ function search(ev:Event){
     let metadataIndex = 2;
     let childIndex = 0;
     let startIndex = 1;
-    let isAlbum : boolean = false;
-    let isInAlbum : boolean = false;
     if((ev.target as HTMLInputElement).id.startsWith("album")){
-        isAlbum = true;
         if((document.getElementById("albumName")?.children[1] as HTMLParagraphElement).innerText !== ""){
-            isInAlbum = true;
             startIndex = 2;
             childIndex = 1;
         }else{

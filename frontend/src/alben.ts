@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             credentials: "include",
                             body: JSON.stringify({"tags": tags})
                         });
-                        const data = await res.json();
                         if(res.ok){
                             document.getElementById("upload-modal-close")?.click();
                             window.location.reload();
@@ -79,7 +78,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const imageDiv = ev.relatedTarget.parentElement as HTMLDivElement;
         const metadata = imageDiv.children[3];
         const img = ((ev.relatedTarget as HTMLElement).previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLElement);
-        console.log(img);
         const modalTags = document.getElementById("album-modal-tags") as HTMLParagraphElement;
         let modalImage = document.getElementById("album-modal-image") as HTMLImageElement;
         modalImage.alt = img.id;
@@ -146,7 +144,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     },
                 credentials: "include"
             });
-            const data = await res.json();
             if(res.ok){
                 document.getElementById("image-modal-close")?.click();
                 document.getElementById("imageDiv-"+imageID)?.remove();
@@ -169,7 +166,6 @@ async function deleteAlbum(ev:Event,multiple?:boolean){
     if(multiple === undefined || !multiple){
         const image = (ev.target as HTMLButtonElement).parentElement?.parentElement?.children[1].children[0] as HTMLImageElement;
         const albumId = image.alt.split("-")[1];
-        console.log(albumId);
         try{
             const res : Response = await fetch("http://localhost:8888/albums/"+albumId, {
                 method: 'delete',
@@ -179,9 +175,8 @@ async function deleteAlbum(ev:Event,multiple?:boolean){
                 },
                 credentials: "include"
             });
-            const data = await res.json();
-            if(res.status == 200){
-                let closeButton = (ev.target as HTMLButtonElement).parentElement?.children[3] as HTMLButtonElement;
+            if(res.status == 204){
+                let closeButton = (ev.target as HTMLButtonElement).parentElement?.children[2] as HTMLButtonElement;
                 closeButton.click();
                 document.getElementById("albumDiv-"+albumId)?.remove();
             }
@@ -199,8 +194,7 @@ async function deleteAlbum(ev:Event,multiple?:boolean){
                     },
                     credentials: "include"
                 });
-                const data = await res.json();
-                if(res.status == 200){
+                if(res.status == 204){
                     document.getElementById("albumDiv-"+albumId)?.remove();
                 }
             }catch(err){

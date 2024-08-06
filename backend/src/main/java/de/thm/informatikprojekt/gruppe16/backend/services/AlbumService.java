@@ -13,6 +13,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>Service class for Album</p>
+ * <p>used to handle all database communication related to albums</p>
+ */
 public class AlbumService {
     private final JDBCPool pool;
 
@@ -20,6 +24,12 @@ public class AlbumService {
         this.pool = pool;
     }
 
+    /**
+     * Checks if the given username own the given albumID
+     * @param albumId
+     * @param username
+     * @return Future Boolean
+     */
     public Future<Boolean> checkAlbumOwnership(String albumId, String username) {
         if (username == null) {
             return Future.failedFuture(new JsonObject().put("error", "No user found!").encode());
@@ -38,6 +48,12 @@ public class AlbumService {
             });
     }
 
+    /**
+     * deletes the given Album and checks if the given username owns the album
+     * @param albumId
+     * @param username
+     * @return Future void
+     */
     public Future<Void> deleteAlbum(String albumId, String username) {
         if (username == null) {
             return Future.failedFuture(new JsonObject().put("error", "No user found!").encode());
@@ -70,6 +86,11 @@ public class AlbumService {
 
     }
 
+    /**
+     * gets all albums from the given username and return them in a Future
+     * @param username
+     * @return Future JsonArray - album data
+     */
     public Future<JsonArray> getAlbumsByUsername(String username){
         if (username == null) {
             return Future.failedFuture(new JsonObject().put("error", "No user found!").encode());
@@ -122,6 +143,12 @@ public class AlbumService {
     }
 
 
+    /**
+     * gets all pictures from the given album and return them in a Future. Also checks if the given username owns the album
+     * @param username
+     * @param albumId
+     * @return Future JsonArray - picture data
+     */
     public Future<JsonArray> getPicturesFromAlbum(String username, String albumId) {
         if (username == null) {
             return Future.failedFuture(new JsonObject().put("error", "No user found!").encode());
@@ -179,6 +206,12 @@ public class AlbumService {
             });
     }
 
+    /**
+     * deletes the given picture from the given album
+     * @param albumId
+     * @param pictureId
+     * @return Future Integer - amount of deleted pictures
+     */
     public Future<Integer> deletePictureFromAlbum(String albumId, String pictureId) {
         if (pictureId == null) {
             return Future.failedFuture(new JsonObject().put("error", "No pictureId found!").encode());
@@ -229,6 +262,13 @@ public class AlbumService {
     }
 
 
+    /**
+     * adds the tags to the album if the user owns the album
+     * @param albumId
+     * @param tags
+     * @param username
+     * @return Future void
+     */
     public Future<Void> addTagsToAlbum(String albumId, String tags, String username) {
         if (albumId == null) {
             return Future.failedFuture(new JsonObject().put("error", "No albumId found!").encode());
@@ -264,6 +304,13 @@ public class AlbumService {
     }
 
 
+    /**
+     * updates to album metadata with the data contained in body if the user owns the album
+     * @param username
+     * @param albumId
+     * @param body request body
+     * @return Future void
+     */
     public Future<Void> updateAlbumMetadata(String username, String albumId, JsonObject body) {
         if (albumId == null) {
             return Future.failedFuture(new JsonObject().put("error", "No albumId found!").encode());
@@ -331,6 +378,13 @@ public class AlbumService {
     }
 
 
+    /**
+     * Adds the picture to the album if the user owns picture and album.
+     * @param albumId
+     * @param pictureId
+     * @param username
+     * @return Future void
+     */
     public Future<Void> addPictureToAlbum(String albumId, String pictureId, String username) {
         if (albumId == null) {
             return Future.failedFuture(new JsonObject().put("error", "No albumId found!").encode());
