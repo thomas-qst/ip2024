@@ -154,7 +154,7 @@ export function getAlbums() {
  * @returns empty promise
  */
 export function fetchImages(ev, album) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         let res;
         let data;
@@ -163,14 +163,18 @@ export function fetchImages(ev, album) {
         if (typeof album !== 'undefined' && typeof ev !== 'undefined') {
             isAlbum = true;
             const albumContainer = document.getElementById("albumContainer");
+            let albumDivCopy = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.cloneNode(true);
+            if (ev.target instanceof SVGPathElement) {
+                albumDivCopy = (_c = (_b = ev.target.parentElement) === null || _b === void 0 ? void 0 : _b.parentElement) === null || _c === void 0 ? void 0 : _c.cloneNode(true);
+            }
             const pageElements = albumContainer.children;
             while (pageElements.length > 2) {
                 pageElements[2].remove();
             }
             const albumNameDiv = document.getElementById("albumName");
             albumNameDiv.classList.remove("d-none");
-            albumNameDiv.children[1].innerText = ((_a = ev.target.nextElementSibling) === null || _a === void 0 ? void 0 : _a.children[0]).innerText;
-            albumNameDiv.children[1].id = "albumID-" + ev.target.nextElementSibling.id.split("-")[1];
+            albumNameDiv.children[1].innerText = albumDivCopy.children[2].children[0].innerText;
+            albumNameDiv.children[1].id = "albumID-" + albumDivCopy.children[2].id.split("-")[1];
             try {
                 res = yield fetchImagesFromAlbum(album);
                 data = yield res.json();
@@ -198,7 +202,7 @@ export function fetchImages(ev, album) {
         else if (res.status == 200) {
             let array = data.data;
             for (let i = 0; i < array.length; i++) {
-                let divCopy = (_b = document.getElementById("BlankImageDiv")) === null || _b === void 0 ? void 0 : _b.cloneNode(true);
+                let divCopy = (_d = document.getElementById("BlankImageDiv")) === null || _d === void 0 ? void 0 : _d.cloneNode(true);
                 divCopy.id = "imageDiv-" + array[i].photo_id;
                 container.appendChild(divCopy);
                 divCopy = document.getElementById("imageDiv-" + array[i].photo_id);

@@ -20,7 +20,7 @@ public class LoginRouter {
      * @param router
      */
     public void route(Router router) {
-        router.get("/login/username").handler(loginHandler::handleGetUsernameFromSession);
+        router.get("/login").handler(loginHandler::handleGetUsernameFromSession);
         router.delete("/login").handler(loginHandler::handleDeleteSession);
         router.post("/login").handler(loginHandler::handleLogin);
         router.patch("/login").handler(loginHandler::handleChangePassword);

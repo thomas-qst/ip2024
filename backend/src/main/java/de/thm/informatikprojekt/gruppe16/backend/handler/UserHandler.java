@@ -96,23 +96,14 @@ public class UserHandler {
      * <p>Uses deleteUser from {@link de.thm.informatikprojekt.gruppe16.backend.services.UserService} to delete one user and gives the appropriate response to the RoutingContext</p>
      * <p>Status Code 400 - Admin user cannot be deleted</p>
      * <p>Status Code 401 - unauthorized</p>
-     * <p>Status Code 401 - Login required</p>
      * <p>Status Code 404 - User not found</p>
-     * <p>Status Code 200 - User deleted</p>
+     * <p>Status Code 204 - User deleted</p>
      * <p>Status Code 500 - Database error</p>
      * @param ctx Vertx RoutingContext
      */
     public void handleDeleteUser(RoutingContext ctx) {
         String usernameToDelete = ctx.pathParam("username");
         String requestingUser = ctx.session().get("user");
-
-        if (requestingUser == null || requestingUser.isEmpty()) {
-            ctx.response()
-                .putHeader("content-type", "application/json")
-                .setStatusCode(401)
-                .end(Json.encodePrettily(new JsonObject().put("error", "Login required!")));
-            return;
-        }
 
         if (!"Admin".equals(requestingUser)) {
             ctx.response()

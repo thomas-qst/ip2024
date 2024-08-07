@@ -6,7 +6,7 @@ import {
     fetchImagesFromPictures,
     fetchUsername, saveAlbumMetadata, savePictureMetadata
 } from "./fetches.js";
-import {AlbumData, ImageData} from "./customInterfaces";
+import {AlbumData, ImageData} from "./customInterfaces.js";
 import {
     addToSelected,
     imageDivHover,
@@ -158,14 +158,18 @@ export async function fetchImages(ev?:Event, album? : string){
     if(typeof album !== 'undefined' && typeof ev !== 'undefined'){
         isAlbum = true;
         const albumContainer = document.getElementById("albumContainer") as HTMLDivElement;
+        let albumDivCopy = (ev.target as HTMLElement).parentElement?.cloneNode(true) as HTMLElement;
+        if(ev.target instanceof SVGPathElement){
+            albumDivCopy = (ev.target as SVGPathElement).parentElement?.parentElement?.cloneNode(true) as HTMLElement;
+        }
         const pageElements = albumContainer.children;
         while(pageElements.length > 2){
             pageElements[2].remove();
         }
         const albumNameDiv = document.getElementById("albumName") as HTMLDivElement;
         albumNameDiv.classList.remove("d-none");
-        (albumNameDiv.children[1] as HTMLHeadElement).innerText = ((ev.target as HTMLElement).nextElementSibling?.children[0] as HTMLParagraphElement).innerText;
-        albumNameDiv.children[1].id = "albumID-"+((ev.target as HTMLElement).nextElementSibling as HTMLDivElement).id.split("-")[1];
+        (albumNameDiv.children[1] as HTMLHeadElement).innerText = (albumDivCopy.children[2].children[0] as HTMLParagraphElement).innerText;
+        albumNameDiv.children[1].id = "albumID-"+(albumDivCopy.children[2] as HTMLDivElement).id.split("-")[1];
         try{
             res = await fetchImagesFromAlbum(album);
             data = await res.json();

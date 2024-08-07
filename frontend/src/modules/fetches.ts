@@ -22,7 +22,7 @@ export async function fetchAlbums() : Promise<Response> {
  * @returns Response from the server
  */
 export async function fetchUsername() {
-    return await fetch(`${host}/login/username`, {
+    return await fetch(`${host}/login`, {
         method: 'get',
         mode: 'cors',
         headers: {

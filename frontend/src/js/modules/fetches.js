@@ -32,7 +32,7 @@ export function fetchAlbums() {
  */
 export function fetchUsername() {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield fetch(`${host}/login/username`, {
+        return yield fetch(`${host}/login`, {
             method: 'get',
             mode: 'cors',
             headers: {

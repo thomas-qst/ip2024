@@ -183,7 +183,7 @@ public class AlbumHandler {
                         ctx.response()
                             .putHeader("content-type", "application/json")
                             .setStatusCode(404)
-                            .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found in the album")));
+                            .end(Json.encodePrettily(new JsonObject().put("error", "Picture not found or user not authorized")));
                     }
                 } else {
                     String errorMessage = ar.cause().getMessage();
