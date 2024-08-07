@@ -1,3 +1,6 @@
+import {sendLogin} from "./modules/fetches.js";
+import {showPassword} from "./modules/frontendFunctions.js";
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("login")?.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -5,15 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const username : string = (document.getElementById("username") as HTMLInputElement).value;
         const password : string = (document.getElementById("password") as HTMLInputElement).value;
 
-        const res : Response = await fetch("http://localhost:8888/login", {
-            method: 'post',
-            mode: 'cors',
-            headers: {
-                "Content-Type": "application/json"
-        },
-            credentials: "include",
-            body: JSON.stringify({"username": username, "password_hash": password })
-        });
+        const res : Response = await sendLogin(username,password);
 
         const usernameElement = document.getElementById("username") as HTMLInputElement;
         const passwordElement = document.getElementById("password") as HTMLInputElement;
@@ -28,18 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     })
 
-    document.getElementById("showPassword")?.addEventListener("click", () => {
-        let eyeOpen = document.getElementById("eyeOpen") as HTMLElement;
-        let eyeClosed = document.getElementById("eyeClosed") as HTMLElement;
-        let password = document.getElementById("password") as HTMLInputElement;
-        if(eyeOpen.classList.contains("d-none")){
-            password.type = "password";
-            eyeOpen.classList.remove("d-none");
-            eyeClosed.classList.add("d-none");
-        }else{
-            password.type = "text";
-            eyeClosed.classList.remove("d-none");
-            eyeOpen.classList.add("d-none");
-        }
-    })
-})
+    document.getElementById("showPassword")?.addEventListener("click", showPassword)
+});
+
+export {};

@@ -1,3 +1,6 @@
+import {showPassword} from "./modules/frontendFunctions.js";
+import {changePassword} from "./modules/fetches.js";
+
 document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("login")?.addEventListener("submit", async (ev) => {
         ev.preventDefault();
@@ -12,15 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("password_repeat")?.classList.remove("is-invalid");
         document.getElementById("password_repeat")?.classList.add("is-valid");
 
-        const res : Response = await fetch("http://localhost:8888/login", {
-            method: 'PATCH',
-            mode: 'cors',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({"password_hash": password })
-        });
+        const res : Response = await changePassword(password);
 
         if(res.status == 201){
             window.location.href = '/fotos.html';
@@ -30,18 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     })
 
-    document.getElementById("showPassword")?.addEventListener("click", () => {
-        let eyeOpen = document.getElementById("eyeOpen") as HTMLElement;
-        let eyeClosed = document.getElementById("eyeClosed") as HTMLElement;
-        let password = document.getElementById("password") as HTMLInputElement;
-        if(eyeOpen.classList.contains("d-none")){
-            password.type = "password";
-            eyeOpen.classList.remove("d-none");
-            eyeClosed.classList.add("d-none");
-        }else{
-            password.type = "text";
-            eyeClosed.classList.remove("d-none");
-            eyeOpen.classList.add("d-none");
-        }
-    })
-})
+    document.getElementById("showPassword")?.addEventListener("click", showPassword);
+});
+
+export {};

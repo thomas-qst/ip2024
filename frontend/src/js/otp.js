@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,6 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { showPassword } from "./modules/frontendFunctions.js";
+import { changePassword } from "./modules/fetches.js";
 document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     (_a = document.getElementById("login")) === null || _a === void 0 ? void 0 : _a.addEventListener("submit", (ev) => __awaiter(void 0, void 0, void 0, function* () {
@@ -23,15 +24,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         }
         (_e = document.getElementById("password_repeat")) === null || _e === void 0 ? void 0 : _e.classList.remove("is-invalid");
         (_f = document.getElementById("password_repeat")) === null || _f === void 0 ? void 0 : _f.classList.add("is-valid");
-        const res = yield fetch("http://localhost:8888/login", {
-            method: 'PATCH',
-            mode: 'cors',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({ "password_hash": password })
-        });
+        const res = yield changePassword(password);
         if (res.status == 201) {
             window.location.href = '/fotos.html';
         }
@@ -39,19 +32,5 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
             window.location.href = '/index.html';
         }
     }));
-    (_b = document.getElementById("showPassword")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", () => {
-        let eyeOpen = document.getElementById("eyeOpen");
-        let eyeClosed = document.getElementById("eyeClosed");
-        let password = document.getElementById("password");
-        if (eyeOpen.classList.contains("d-none")) {
-            password.type = "password";
-            eyeOpen.classList.remove("d-none");
-            eyeClosed.classList.add("d-none");
-        }
-        else {
-            password.type = "text";
-            eyeClosed.classList.remove("d-none");
-            eyeOpen.classList.add("d-none");
-        }
-    });
+    (_b = document.getElementById("showPassword")) === null || _b === void 0 ? void 0 : _b.addEventListener("click", showPassword);
 }));
