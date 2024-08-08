@@ -60,8 +60,8 @@ export function logout() {
  * fetches the albums from the backend and loads them on the page by copying the BlankDiv and adjusting the ids etc.
  */
 export function getAlbums() {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         try {
             const res = yield fetchAlbums();
             const data = yield res.json();
@@ -154,8 +154,8 @@ export function getAlbums() {
  * @returns empty promise
  */
 export function fetchImages(ev, album) {
-    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c, _d;
         let res;
         let data;
         let container;
@@ -249,8 +249,8 @@ export function fetchImages(ev, album) {
  * @param ev
  */
 export function deleteUser(ev) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
         const username = ev.target.id.split("-")[3];
         try {
             let res = yield deleteUserFromBackend(username);
@@ -270,8 +270,8 @@ export function deleteUser(ev) {
  * @param {boolean}[album]
  */
 export function saveMetadata(ev, album) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
         let type = "image";
         if (album) {
             type = "album";

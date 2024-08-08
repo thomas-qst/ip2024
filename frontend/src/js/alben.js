@@ -73,8 +73,8 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
  * @param {boolean}[multiple]
  */
 function deleteAlbum(ev, multiple) {
-    var _a, _b, _c, _d, _e, _f;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c, _d, _e, _f;
         if (multiple === undefined || !multiple) {
             const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
             const albumID = image.alt.split("-")[1];
@@ -112,8 +112,8 @@ function deleteAlbum(ev, multiple) {
  * @param event
  */
 function addAlbum(event) {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b;
         event.preventDefault();
         const title = document.getElementById("upload-modal-title").value;
         const tags = document.getElementById("upload-modal-tags").value;

@@ -87,6 +87,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("addToAlbum-modal")?.addEventListener("show.bs.modal", showAddToAlbum);
 
+    document.getElementById("addToAlbum-modal")?.addEventListener("hide.bs.modal", () => {
+        let body = document.getElementById("addToAlbum-modal-body") as HTMLDivElement;
+        const blackElement = body.children[0].cloneNode(true);
+        body.innerHTML = "";
+        body.appendChild(blackElement);
+    })
+
     document.getElementById("image-modal-download")?.addEventListener("click", (ev) =>{
         const image = (ev.target as HTMLButtonElement).parentElement?.parentElement?.children[1].children[0] as HTMLImageElement;
         const imageType = image.src.split(";")[0].split("/")[1];

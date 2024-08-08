@@ -14,7 +14,7 @@ import { getUsername, fetchImages, logout } from "./modules/backendFunctions.js"
 let username;
 let selectedAlbum = [];
 document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t;
     sharedDOMContent();
     username = yield getUsername();
     const userElement = document.getElementById("user");
@@ -78,7 +78,13 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         }
     });
     (_m = document.getElementById("addToAlbum-modal")) === null || _m === void 0 ? void 0 : _m.addEventListener("show.bs.modal", showAddToAlbum);
-    (_o = document.getElementById("image-modal-download")) === null || _o === void 0 ? void 0 : _o.addEventListener("click", (ev) => {
+    (_o = document.getElementById("addToAlbum-modal")) === null || _o === void 0 ? void 0 : _o.addEventListener("hide.bs.modal", () => {
+        let body = document.getElementById("addToAlbum-modal-body");
+        const blackElement = body.children[0].cloneNode(true);
+        body.innerHTML = "";
+        body.appendChild(blackElement);
+    });
+    (_p = document.getElementById("image-modal-download")) === null || _p === void 0 ? void 0 : _p.addEventListener("click", (ev) => {
         var _a, _b;
         const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
         const imageType = image.src.split(";")[0].split("/")[1];
@@ -87,15 +93,15 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         a.download = "Image." + imageType;
         a.click();
     });
-    (_p = document.getElementById("image-modal-delete")) === null || _p === void 0 ? void 0 : _p.addEventListener("click", deleteImages);
-    (_q = document.getElementById("image-modal-edit")) === null || _q === void 0 ? void 0 : _q.addEventListener("click", clickModalEdit);
+    (_q = document.getElementById("image-modal-delete")) === null || _q === void 0 ? void 0 : _q.addEventListener("click", deleteImages);
+    (_r = document.getElementById("image-modal-edit")) === null || _r === void 0 ? void 0 : _r.addEventListener("click", clickModalEdit);
     function clickModalEdit(ev) {
         editButtonToSave(ev);
     }
-    (_r = document.getElementById("deleteMultiple")) === null || _r === void 0 ? void 0 : _r.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
+    (_s = document.getElementById("deleteMultiple")) === null || _s === void 0 ? void 0 : _s.addEventListener("click", (ev) => __awaiter(void 0, void 0, void 0, function* () {
         yield deleteImages(ev, true);
     }));
-    (_s = document.getElementById("addToAlbum-modal-submit")) === null || _s === void 0 ? void 0 : _s.addEventListener("click", submitAddToAlbum);
+    (_t = document.getElementById("addToAlbum-modal-submit")) === null || _t === void 0 ? void 0 : _t.addEventListener("click", submitAddToAlbum);
 }));
 /**
  * if boolean is not set, then it deletes the image from the context of the event.
@@ -104,8 +110,8 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
  * @param {boolean}[multiple]
  */
 function deleteImages(ev, multiple) {
-    var _a, _b, _c, _d, _e, _f, _g;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c, _d, _e, _f, _g;
         if (multiple === undefined || !multiple) {
             const image = (_b = (_a = ev.target.parentElement) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.children[1].children[0];
             const imageID = image.alt.split("-")[1];
