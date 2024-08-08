@@ -239,7 +239,7 @@ public class PictureService {
             .preparedQuery(updateQuery.toString())
             .execute(Tuple.wrap(updateParams.toArray()))
             .compose(rows -> {
-                if (!rows.iterator().hasNext()) {
+                if (rows.rowCount() == 0) {
                     return Future.failedFuture("Photo not found or user not authorized");
                 }
                 return Future.succeededFuture();
