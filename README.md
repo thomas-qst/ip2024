@@ -136,7 +136,7 @@ Zurück geht zu beiden eine 1,n Beziehung, da wenn ein AlbumFoto existiert, dann
 - Bei Abmeldung (Logout) werden die Nutzer automatisch wieder zur Loginseite weitergeleitet.
 #### Benutzerverwaltung (Rolle Admin)
 - Ein Admin wurde bei der ersten Nutzung der Anwendung in der Datenbank über ein DDL-Skript angelegt.
-- Der Nutzer mit der Rolle Admin verwaltet erfolgreich Nutzerkonten (Anzeigen, Suchen, Hinzufügen, Bearbeiten, Löschen).
+- Der Nutzer mit der Rolle Admin verwaltet erfolgreich Nutzerkonten (Anzeigen, Hinzufügen, Löschen).
 - Es können keine weiteren Admins erstellt werden.
 - Nutzerkonten enthalten mindestens einen eindeutigen Nutzernamen, ein Passwort und eine Rolle (Nutzer oder Admin).
 - Passwörter werden gehasht in der Datenbank gespeichert.
@@ -155,8 +155,13 @@ Zurück geht zu beiden eine 1,n Beziehung, da wenn ein AlbumFoto existiert, dann
 - Jedes Fotoalbum gehört einem Nutzer, und jeder Nutzer sieht nur seine eigenen Alben.
 - Eine Suchfunktion für Fotoalben ist bereitgestellt, über die Nutzer ein Album aus den Suchergebnissen auswählen und die zugehörigen Fotos anzeigen können.
 
+### Nicht erfüllt:
+#### Admin
+- Der Nutzer mit der Rolle Admin verwaltet erfolgreich Nutzerkonten.
+  - Suchen: Da die Browser suche funktioniert, haben wir diese Funktion nicht beachtet
+  - Bearbeiten: Aufgrund unserer OTP Funktion, liegt die verantwortung bei dem Benutzer, des Weitern würde das ändern des Passworts vom Admin, die Möglichkeit eröffnen, dass der Admin jederzeit auf die Bilder der Benutzer zugreiffen kann.
 #### Zusammengefasst: 
-Alle geforderten Anforderungen wurden vollständig und voll funktionstüchtig umgesetzt.
+Nahezu alle geforderten Anforderungen wurden vollständig und voll funktionstüchtig umgesetzt.
 
 
 #### Optional (Nicht Teil der optionalen Bonusaufgaben!):
