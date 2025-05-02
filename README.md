@@ -1,5 +1,8 @@
 # README
 
+## Informationen zum Projekt
+Dies war ein Projekt zum Abschluss des ersten und zwieten Semesters der Technischen Hochschule Mittelhessen in Informatik.
+
 ## Informationen zur Inbetriebnahme der Anwendung
 Als ersten Schritt, sollte die database.sql, innerhalb des backend Ordner geladen werden oder das identische Skript, welches sich im nächsten Abschnitt befindet, danach wie gewohnt mit den Befehlen aus README.adoc, die Anwendung erstmal testen, packagen und dann starten. Dies muss alles in einem Terminal in dem backend Verzeichnis gemacht werden. Dann am besten im fronted Verzeichnis, mit einem Pythonbefehl einen HTTP Server starten, damit alles richtig läuft. Das starten, mit der Webstorm preview funktioniert nur bedingt. Dann nur noch Browser öffnen und Localhost:8080 eingeben.
 
